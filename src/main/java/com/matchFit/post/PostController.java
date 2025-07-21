@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.matchFit.post.dto.PostInfoResponseDto;
 import com.matchFit.post.dto.PostRequestDto;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -30,8 +32,14 @@ public class PostController {
 	@GetMapping("/api/posts/{postId}")
 	public ResponseEntity<PostInfoResponseDto> getPostDetail(
 							@PathVariable Long postId,
-							@RequestParam Long userId){
-		//Long userId = null; // 로그인한 사용자 정보에서 가져오기
+							HttpServletRequest request){
+		// 로그인 한 사용자 정보 이용
+		HttpSession session = request.getSession(false);
+		    Long userId = null;
+		    if (session != null && session.getAttribute("userId") != null) {
+		        userId = (Long) session.getAttribute("userId");
+		    }
+
 		PostInfoResponseDto dto = postService.searchPost(postId, userId);
 		return ResponseEntity.ok(dto); 
 	}
