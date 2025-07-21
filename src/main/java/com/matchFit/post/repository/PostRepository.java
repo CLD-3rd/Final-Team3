@@ -1,5 +1,6 @@
 package com.matchFit.post.repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -26,4 +27,6 @@ public interface PostRepository extends JpaRepository<Post, Long> {
         @Param("gender") String gender,
         @Param("nearest") boolean nearest
     );
+    
+    List<Post> findAllByDateBetween(LocalDateTime start, LocalDateTime end);
 }
