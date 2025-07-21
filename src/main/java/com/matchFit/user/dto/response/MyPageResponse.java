@@ -15,4 +15,6 @@ public class MyPageResponse {
     private String town;
     private Integer age;
     private Sports sports;
+    private Integer recruitCount;
+    private Integer joinCount;
 }
