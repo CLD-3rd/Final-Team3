@@ -31,8 +31,8 @@ public class SecurityConfig {
                     // 정적 리소스
                     "/static/**", "/css/**", "/js/**", "/images/**",
                     
-                    // 인증 관련 API
-                    "/api/auth/**"
+                    "/api/auth/**", 
+                    "/api/user/**" 
                 ).permitAll()
                 // 메모 조회 API (GET 요청만 허용)
                 .requestMatchers(HttpMethod.GET, "/api/notes/**").permitAll()
