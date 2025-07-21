@@ -1,9 +1,12 @@
-package com.matchFit.user;
+package com.matchFit.user.entity;
 
 import com.matchFit.common.BaseEntity;
+import com.matchFit.post.entity.Sports;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -23,14 +26,16 @@ public class User extends BaseEntity {
 	@Column(nullable = false)
 	private String username;
 	
-//	@Column(nullable = false)
-//	private GENDER gender;
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false)
+	private Gender gender;
 	
 	@Column(nullable = false)
 	private Integer age;
 	
-//	@Column(nullable = false)
-//	private SPORTS sports;
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false)
+	private Sports sports;
 	
 	@Column(nullable = false)
 	private String town;
