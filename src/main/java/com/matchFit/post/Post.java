@@ -26,16 +26,16 @@ public class Post extends BaseEntity {
 	@Column(nullable = true)
 	private String imageUrl;
 	
-//	@Column(nullable = false)
-//	private GENDER gender;
-//	
-//	@Column(nullable = false)
-//	private SPORTS sports;
+	@Column(nullable = false)
+	private GENDER gender;
+	
+	@Column(nullable = false)
+	private SPORTS sports;
 	
 	@Column(nullable = false)
 	private Integer cost;
 	
-//	private STATUS status;
+	private STATUS status;
 	
 //	@Column(nullable = false)
 //	private TOWN town;
