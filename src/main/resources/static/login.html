@@ -540,10 +540,19 @@
             Kakao.init('ae217452e8bbfd6450ca5024a003504e');
             console.log('카카오 SDK 초기화 완료');
         }
+        
 
         // 에러 메시지 표시
         const urlParams = new URLSearchParams(window.location.search);
         const error = urlParams.get('error');
+        
+        // 카카오 로그인 후 받은 토큰 저장
+        const kakaoToken = urlParams.get('kakaoToken');
+	    if (kakaoToken) {
+	        localStorage.setItem('jwt', kakaoToken);
+	        window.location.href = "/main";
+	    }
+    
         if (error === 'true') {
             const messageBox = document.getElementById('messageBox');
             messageBox.classList.add('error', 'message');
@@ -608,6 +617,10 @@
             });
 
             if (response.ok) {
+				const result = await response.json(); // 서버 응답: { token: '...' }
+   				console.log(result.token); 
+   				localStorage.setItem('jwt', result.token); // 토큰 저장
+   				
                 // 로그인 성공 - 메인 페이지로 이동
                 window.location.href = '/main';
             } else {

@@ -10,11 +10,13 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.matchFit.post.entity.Sports;
 
+import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 
@@ -51,11 +53,12 @@ public class AuthController {
             user.setAge(signUpRequest.getAge());
             user.setTown(signUpRequest.getTown());
 
-            if (signUpRequest.isKakaoUser()) {
-                user.setPassword("KAKAO_LOGIN");  // 카카오 로그인은 비번 없음
+            if (signUpRequest.getPassword() == null || signUpRequest.getPassword().isEmpty()) {
+                user.setPassword("KAKAO_LOGIN");  // 카카오 로그인은 비밀번호 없음
             } else {
                 user.setPassword(passwordEncoder.encode(signUpRequest.getPassword()));
             }
+
             userRepository.save(user);
             return ResponseEntity.ok("회원가입이 완료되었습니다!");
         } catch (IllegalArgumentException e) {
@@ -111,5 +114,51 @@ public class AuthController {
         return ResponseEntity.ok(Collections.singletonMap("authenticated", false));
     }
     
+    @Autowired
+    private JwtProvider jwtProvider;
+    
+    @PostMapping("/login")
+    public ResponseEntity<?> loginUser(@RequestBody Map<String, String> request) {
+        String email = request.get("email");
+        String password = request.get("password");
+
+        User user = userRepository.findByEmail(email).orElse(null);
+
+        if (user == null) {
+            return ResponseEntity.status(401).body("존재하지 않는 사용자입니다.");
+        }
+
+        // 카카오 회원이면 일반 로그인 차단
+        if ("KAKAO_LOGIN".equals(user.getPassword())) {
+            return ResponseEntity.status(403).body("카카오 회원은 일반 로그인할 수 없습니다.");
+        }
+
+        // 비밀번호 검증
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            return ResponseEntity.status(401).body("이메일 또는 비밀번호가 올바르지 않습니다.");
+        }
+
+        String jwt = jwtProvider.createToken(user.getId(), user.getEmail());
+        return ResponseEntity.ok(Collections.singletonMap("token", jwt));
+        
+    }
+
+    
+    @GetMapping("/me")
+    public ResponseEntity<?> getMyProfile(@RequestHeader("Authorization") String authHeader) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(401).body("토큰 없음");
+        }
+
+        String token = authHeader.substring(7);
+        Claims claims = jwtProvider.validateToken(token);
+
+        String email = claims.get("email", String.class);
+        User user = userRepository.findByEmail(email).orElse(null);
+        if (user == null) return ResponseEntity.status(404).body("사용자 없음");
+
+        return ResponseEntity.ok(user);
+    }
+
     
 }

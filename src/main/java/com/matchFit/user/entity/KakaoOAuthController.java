@@ -1,7 +1,9 @@
 package com.matchFit.user.entity;
 
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -12,17 +14,16 @@ import org.springframework.stereotype.Controller;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.client.RestTemplate;
-import jakarta.servlet.http.HttpSession;
 
 @Controller 
 public class KakaoOAuthController {
 
     @Autowired
     private UserRepository userRepository;
-
+    @Autowired
+    private JwtProvider jwtProvider;
     // 카카오 회원가입용 콜백
     @GetMapping("/api/user/oauth/kakao/callback")
     public String kakaoSignupCallback(@RequestParam String code) {
@@ -39,26 +40,42 @@ public class KakaoOAuthController {
     
     // 카카오 로그인용 콜백
     @GetMapping("/api/user/oauth/kakao/login-callback")
-    public String kakaoLoginCallback(@RequestParam String code, HttpSession session) {
-        try {
-            String email = getKakaoEmail(code, "http://localhost:8083/api/user/oauth/kakao/login-callback");
-            
-            User user = userRepository.findByEmail(email).orElse(null);
-            
-            if (user != null) {
-                session.setAttribute("userEmail", user.getEmail());
-                System.out.println("=== 카카오 로그인 성공: " + email + " ===");
-                return "redirect:/main";
-            } else {
-                System.out.println("=== 신규 사용자, 회원가입으로 이동: " + email + " ===");
-                return "redirect:/signup?kakaoEmail=" + email;
-            }
-            
-        } catch (Exception e) {
-            System.out.println("=== 카카오 로그인 콜백 실패: " + e.getMessage() + " ===");
-            return "redirect:/login?error=true";
+    public ResponseEntity<?> kakaoLoginCallback(@RequestParam String code) {
+        String email = getKakaoEmail(code, "http://localhost:8083/api/user/oauth/kakao/login-callback");
+        User user = userRepository.findByEmail(email).orElse(null);
+
+        if (user != null) {
+            String jwt = jwtProvider.createToken(user.getId(), user.getEmail());
+            return ResponseEntity.ok(Collections.singletonMap("token", jwt));
+        } else {
+            // 프론트에서 추가정보 입력 폼으로 리디렉션 필요
+            return ResponseEntity.status(307)
+                    .header("Location", "/signup?kakaoEmail=" + email)
+                    .build();
         }
     }
+
+//    @GetMapping("/api/user/oauth/kakao/login-callback")
+//    public String kakaoLoginCallback(@RequestParam String code, HttpSession session) {
+//        try {
+//            String email = getKakaoEmail(code, "http://localhost:8083/api/user/oauth/kakao/login-callback");
+//            
+//            User user = userRepository.findByEmail(email).orElse(null);
+//            
+//            if (user != null) {
+//                session.setAttribute("userEmail", user.getEmail());
+//                System.out.println("=== 카카오 로그인 성공: " + email + " ===");
+//                return "redirect:/main";
+//            } else {
+//                System.out.println("=== 신규 사용자, 회원가입으로 이동: " + email + " ===");
+//                return "redirect:/signup?kakaoEmail=" + email;
+//            }
+//            
+//        } catch (Exception e) {
+//            System.out.println("=== 카카오 로그인 콜백 실패: " + e.getMessage() + " ===");
+//            return "redirect:/login?error=true";
+//        }
+//    }
     
     private String getKakaoEmail(String code, String redirectUri) {
         try {
