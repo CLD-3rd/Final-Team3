@@ -13,4 +13,5 @@ public class SignUpRequest {
     private String gender;
     private String town;
     private String sports;
+    private boolean isKakaoUser;
 }

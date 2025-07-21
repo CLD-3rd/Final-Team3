@@ -44,7 +44,6 @@ public class AuthController {
             // 새 사용자 생성 (String을 enum으로 변환)
             User user = new User();
             user.setEmail(signUpRequest.getEmail());
-            user.setPassword(passwordEncoder.encode(signUpRequest.getPassword()));
             user.setNickname(signUpRequest.getNickname());
 
             user.setGender(Gender.valueOf(signUpRequest.getGender()));
@@ -52,6 +51,11 @@ public class AuthController {
             user.setAge(signUpRequest.getAge());
             user.setTown(signUpRequest.getTown());
 
+            if (signUpRequest.isKakaoUser()) {
+                user.setPassword("KAKAO_LOGIN");  // 카카오 로그인은 비번 없음
+            } else {
+                user.setPassword(passwordEncoder.encode(signUpRequest.getPassword()));
+            }
             userRepository.save(user);
             return ResponseEntity.ok("회원가입이 완료되었습니다!");
         } catch (IllegalArgumentException e) {

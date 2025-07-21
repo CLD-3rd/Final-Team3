@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>로그인 - 스포츠 메이트</title>
+    <script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.5/kakao.min.js" integrity="sha384-dok87au0gKqJdxs7msEdBPNnKSRT+/mhTVzq+qOhcL464zXwvcrpjeWvyj1kCdq6" crossorigin="anonymous"></script>
     <style>
         * {
             margin: 0;
@@ -475,19 +476,11 @@
       <!-- 메시지 표시 영역 -->
       <div class="message" id="messageBox"></div>
 
-      <!-- 최근 로그인 방법 -->
-      <div class="recent-login" id="recentLogin" style="display: none;">
-        <span class="recent-login-icon">💡</span>
-        <span class="recent-login-text">
-          최근에 <span class="recent-login-method" id="recentMethod">카카오</span>로 로그인하셨습니다
-        </span>
-      </div>
-
       <!-- 소셜 로그인 -->
       <div class="social-login">
-        <button class="social-btn kakao-btn" onclick="socialLogin('kakao')">
+        <button class="social-btn kakao-btn" onclick="kakaoLogin()">
           <span class="social-icon">💬</span>
-          <span>카카오로 시작하기</span>
+          <span>카카오로 로그인</span>
         </button>
       </div>
 
@@ -498,18 +491,18 @@
         <div class="divider-line"></div>
       </div>
 
-      <!-- ✅ 일반 로그인 폼 (form submit 방식) -->
-      <form method="post" action="/login" onsubmit="return validateForm()">
+      <!-- 일반 로그인 폼 -->
+      <form onsubmit="return handleLogin(event)">
         <div class="form-group">
           <label class="form-label">이메일</label>
-          <input type="email" class="form-input" name="email" id="email" placeholder="이메일을 입력하세요" required />
+          <input type="email" class="form-input" id="email" placeholder="이메일을 입력하세요" required />
           <div class="error-message" id="emailError">올바른 이메일을 입력해주세요</div>
         </div>
 
         <div class="form-group">
           <label class="form-label">비밀번호</label>
           <div class="password-wrapper">
-            <input type="password" class="form-input" name="password" id="password" placeholder="비밀번호를 입력하세요" required />
+            <input type="password" class="form-input" id="password" placeholder="비밀번호를 입력하세요" required />
             <button type="button" class="password-toggle" onclick="togglePassword()">👁️</button>
           </div>
           <div class="error-message" id="passwordError">비밀번호를 입력해주세요</div>
@@ -541,68 +534,133 @@
   </div>
 
   <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 카카오 SDK 초기화
+        if (typeof Kakao !== 'undefined') {
+            Kakao.init('ae217452e8bbfd6450ca5024a003504e');
+            console.log('카카오 SDK 초기화 완료');
+        }
+
+        // 에러 메시지 표시
+        const urlParams = new URLSearchParams(window.location.search);
+        const error = urlParams.get('error');
+        if (error === 'true') {
+            const messageBox = document.getElementById('messageBox');
+            messageBox.classList.add('error', 'message');
+            messageBox.textContent = '이메일 또는 비밀번호가 올바르지 않습니다.';
+            messageBox.style.display = 'block';
+        }
+    });
+
     let rememberMe = false;
     let showPassword = false;
 
-    function socialLogin(provider) {
-      alert("소셜 로그인은 준비 중입니다.");
+    // 카카오 로그인
+    function kakaoLogin() {
+        if (typeof Kakao === 'undefined') {
+            alert('카카오 SDK가 로드되지 않았습니다.');
+            return;
+        }
+
+        Kakao.Auth.authorize({
+            redirectUri: 'http://localhost:8083/api/user/oauth/kakao/login-callback'  // 로그인용 콜백 URL
+        });
     }
 
     function togglePassword() {
-      const passwordInput = document.getElementById("password");
-      const toggleBtn = document.querySelector(".password-toggle");
-      showPassword = !showPassword;
-      passwordInput.type = showPassword ? "text" : "password";
-      toggleBtn.textContent = showPassword ? "🙈" : "👁️";
+        const passwordInput = document.getElementById("password");
+        const toggleBtn = document.querySelector(".password-toggle");
+        showPassword = !showPassword;
+        passwordInput.type = showPassword ? "text" : "password";
+        toggleBtn.textContent = showPassword ? "🙈" : "👁️";
     }
 
     function toggleRememberMe() {
-      const checkbox = document.getElementById("rememberCheckbox");
-      rememberMe = !rememberMe;
-      checkbox.classList.toggle("checked", rememberMe);
+        const checkbox = document.getElementById("rememberCheckbox");
+        rememberMe = !rememberMe;
+        checkbox.classList.toggle("checked", rememberMe);
+    }
+
+    // 일반 로그인 처리
+    async function handleLogin(event) {
+        event.preventDefault();
+        
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
+        
+        if (!validateForm()) {
+            return false;
+        }
+
+        // 로딩 표시
+        document.getElementById('loadingModal').style.display = 'block';
+
+        try {
+            const response = await fetch('/api/user/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email: email,
+                    password: password
+                })
+            });
+
+            if (response.ok) {
+                // 로그인 성공 - 메인 페이지로 이동
+                window.location.href = '/main';
+            } else {
+                const error = await response.text();
+                showMessage('error', error);
+            }
+        } catch (error) {
+            showMessage('error', '로그인 중 오류가 발생했습니다.');
+        }
+
+        // 로딩 숨김
+        document.getElementById('loadingModal').style.display = 'none';
+        
+        return false;
     }
 
     function validateForm() {
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
-      let valid = true;
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
+        let valid = true;
 
-      const emailInput = document.getElementById("email");
-      const passwordInput = document.getElementById("password");
-      const emailError = document.getElementById("emailError");
-      const passwordError = document.getElementById("passwordError");
+        const emailInput = document.getElementById("email");
+        const passwordInput = document.getElementById("password");
+        const emailError = document.getElementById("emailError");
+        const passwordError = document.getElementById("passwordError");
 
-      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        emailInput.classList.add("error");
-        emailError.style.display = "block";
-        valid = false;
-      } else {
-        emailInput.classList.remove("error");
-        emailError.style.display = "none";
-      }
+        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            emailInput.classList.add("error");
+            emailError.style.display = "block";
+            valid = false;
+        } else {
+            emailInput.classList.remove("error");
+            emailError.style.display = "none";
+        }
 
-      if (!password) {
-        passwordInput.classList.add("error");
-        passwordError.style.display = "block";
-        valid = false;
-      } else {
-        passwordInput.classList.remove("error");
-        passwordError.style.display = "none";
-      }
+        if (!password) {
+            passwordInput.classList.add("error");
+            passwordError.style.display = "block";
+            valid = false;
+        } else {
+            passwordInput.classList.remove("error");
+            passwordError.style.display = "none";
+        }
 
-      return valid;
+        return valid;
     }
 
-     document.addEventListener('DOMContentLoaded', function() {
-	    const urlParams = new URLSearchParams(window.location.search);
-	    const error = urlParams.get('error');
-	    if (error === 'true') {
-	      const messageBox = document.getElementById('messageBox');
-	      messageBox.classList.add('error', 'message');
-	      messageBox.textContent = '이메일 또는 비밀번호가 올바르지 않습니다.';
-	      messageBox.style.display = 'block';
-	    }
-	  });
+    function showMessage(type, message) {
+        const messageBox = document.getElementById('messageBox');
+        messageBox.className = `message ${type}`;
+        messageBox.textContent = message;
+        messageBox.style.display = 'block';
+    }
   </script>
 </body>
 </html>

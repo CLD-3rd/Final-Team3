@@ -6,8 +6,9 @@
     <title>회원가입 - 스포츠 메이트</title>
     <!-- Google Fonts - Roboto -->
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-    <script src="https://t1.kakaocdn.net/kakao_js_sdk/2.5.0/kakao.min.js"></script>
+	<script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.5/kakao.min.js" integrity="sha384-dok87au0gKqJdxs7msEdBPNnKSRT+/mhTVzq+qOhcL464zXwvcrpjeWvyj1kCdq6" crossorigin="anonymous">
 
+	</script>
     
     <style>
         * {
@@ -605,7 +606,7 @@
 
             <!-- 소셜 회원가입 -->
             <div class="social-signup">
-                <button class="social-btn kakao-btn" onclick="socialSignup('kakao')">
+                <button class="social-btn kakao-btn" onclick="kakaoSignup()">
                     <span class="social-icon">💬</span>
                     <span>카카오로 시작하기</span>
                 </button>
@@ -633,7 +634,7 @@
                 </div>
 
                 <!-- 비밀번호 -->
-                <div class="form-group">
+                <div class="form-group password-group">
                     <label class="form-label">비밀번호<span class="form-required">*</span></label>
                     <div class="input-wrapper">
                         <input type="password" class="form-input" id="password" placeholder="8자 이상, 영문/숫자/특수문자 포함" 
@@ -661,7 +662,7 @@
                 </div>
 
                 <!-- 비밀번호 확인 -->
-                <div class="form-group">
+                <div class="form-group password-confirm-group">
                     <label class="form-label">비밀번호 확인<span class="form-required">*</span></label>
                     <div class="input-wrapper">
                         <input type="password" class="form-input" id="passwordConfirm" placeholder="비밀번호를 다시 입력하세요" 
@@ -826,6 +827,102 @@
 
 
 	<script>
+		document.addEventListener('DOMContentLoaded', function() {
+		// 카카오 SDK 초기화
+		    if (typeof Kakao !== 'undefined') {
+		        Kakao.init('ae217452e8bbfd6450ca5024a003504e');
+		        console.log('카카오 SDK 초기화 완료');
+		    } else {
+		        console.error('카카오 SDK가 로드되지 않았습니다.');
+		    }
+		    
+		    // URL 파라미터에서 카카오 사용자 정보 확인
+		    const urlParams = new URLSearchParams(window.location.search);
+		    const kakaoEmail = urlParams.get('kakaoEmail');
+		    const kakaoNickname = urlParams.get('kakaoNickname');
+		    
+		    if (kakaoEmail) {
+				// 비밀번호 입력란 숨기기
+		        const passwordGroup = document.querySelector(".password-group");
+		        if (passwordGroup) passwordGroup.style.display = "none";
+		        const passwordInput = document.getElementById("password");
+		        if (passwordInput) passwordInput.required = false;
+		
+		        // 비밀번호 확인란 숨기기
+		        const confirmGroup = document.querySelector(".password-confirm-group");
+		        if (confirmGroup) confirmGroup.style.display = "none";
+		        const confirmInput = document.getElementById("passwordConfirm");
+		        if (confirmInput) confirmInput.required = false;
+				validationState.password = true;
+				validationState.passwordConfirm = true;
+				
+				const socialSection = document.querySelector('.social-signup');
+    			if (socialSection) socialSection.style.display = 'none';
+				
+				const divider = document.querySelector('.divider');
+   				if (divider) divider.style.display = 'none';
+				console.log('카카오 이메일 받음:', kakaoEmail);  // 콘솔 확인용
+
+		        // 카카오 이메일 자동 입력
+		        const emailInput = document.getElementById('email');
+		        emailInput.value = kakaoEmail;
+		        emailInput.readOnly = true;
+		        emailInput.style.backgroundColor = '#f3f4f6';
+		        emailInput.style.cursor = 'not-allowed';
+		        
+		        // 이메일 유효성 검사 및 중복확인 처리
+		        validationState.email = true;
+		        validationState.emailChecked = true;
+		        
+		        // 버튼 상태 변경
+		        const checkEmailBtn = document.getElementById('checkEmailBtn');
+		        checkEmailBtn.disabled = true;
+		        checkEmailBtn.textContent = '카카오 연동';
+		        checkEmailBtn.style.backgroundColor = '#fee500';
+		        checkEmailBtn.style.color = '#3c1e1e';
+		        
+		        // 연동 해제 버튼 추가
+		        const emailWrapper = checkEmailBtn.parentElement;
+		        if (!document.getElementById('resetKakaoBtn')) {
+		            const resetBtn = document.createElement('button');
+		            resetBtn.type = 'button';
+		            resetBtn.id = 'resetKakaoBtn';
+		            resetBtn.className = 'input-button';
+		            resetBtn.textContent = '연동해제';
+		            resetBtn.style.backgroundColor = '#fee2e2';
+		            resetBtn.style.color = '#dc2626';
+		            resetBtn.style.marginLeft = '8px';
+		            resetBtn.onclick = resetKakaoEmail;
+		            emailWrapper.appendChild(resetBtn);
+		        }
+		        
+		        // 성공 메시지 표시
+		        const successElement = document.getElementById('emailSuccess');
+		        showSuccess(document.getElementById('emailError'), successElement, '카카오 이메일이 연동되었습니다');
+		        
+		        // 카카오 닉네임 자동 입력
+		        if (kakaoNickname) {
+		            const nicknameInput = document.getElementById('nickname');
+		            if (!nicknameInput.value) {
+		                nicknameInput.value = kakaoNickname;
+		                checkNickname();
+		            }
+		        }
+		        
+		        
+		        // validationState에 카카오 사용자임을 표시
+		        validationState.isKakaoUser = true;
+		        
+		        updateSignupButton();
+		        
+		        // URL에서 파라미터 제거 
+		        const url = new URL(window.location);
+		        url.searchParams.delete('kakaoEmail');
+		        url.searchParams.delete('kakaoNickname');
+		        url.searchParams.delete('kakaoGender');
+		        window.history.replaceState({}, document.title, url.pathname);
+		    }
+        });
         // 전역 변수들
 		let validationState = {
 		    email: false,
@@ -837,11 +934,49 @@
 		    age: false,
 		    town: false,
 		    gender: false,
-		    sports: false
+		    sports: false,
+		    isKakaoUser: false
 		};
 		
 		let selectedGender = '';
 		let selectedSports = '';  // selectedsports -> selectedSports로 수정
+		
+		
+
+        // 카카오 회원가입
+        function kakaoSignup() {
+            Kakao.Auth.authorize({
+		      redirectUri: 'http://localhost:8083/api/user/oauth/kakao/callback',  // 앱에 등록된 카카오 로그인에서 사용할 Redirect URI 입력
+		    
+		      
+		    });
+        }
+
+        // 카카오 연동 해제
+        function resetKakaoEmail() {
+            const emailInput = document.getElementById('email');
+            emailInput.value = '';
+            emailInput.readOnly = false;
+            emailInput.style.backgroundColor = '';
+            
+            document.getElementById('checkEmailBtn').disabled = false;
+            document.getElementById('checkEmailBtn').textContent = '중복확인';
+            document.getElementById('resetKakaoBtn').style.display = 'none';
+            
+            validationState.email = false;
+            validationState.emailChecked = false;
+            
+            const errorElement = document.getElementById('emailError');
+            const successElement = document.getElementById('emailSuccess');
+            hideMessages(errorElement, successElement);
+            
+            updateSignupButton();
+            
+            // 카카오 로그아웃
+            if (typeof Kakao !== 'undefined') {
+                Kakao.Auth.logout();
+            }
+        }
 		
 		// 지역 데이터
 		const districtData = {
@@ -1239,17 +1374,13 @@
 		    console.log('Button enabled:', isValid);
 		}
 		
-		// 소셜 로그인
-		function socialSignup(provider) {
-		    alert(`${provider} 소셜 로그인은 준비 중입니다.`);
-		}
 		
 		// 로그인 페이지로 이동
 		function goToLogin() {
 		    window.location.href = '/login';
 		}
 		
-		// 회원가입 처리 (수정됨)
+		// 회원가입 처리
 		async function handleSignup(event) {
 		    event.preventDefault();
 		    
@@ -1272,6 +1403,10 @@
 		    const district = document.getElementById('district').value;
 		    const fullAddress = `${city} ${district}`;
 		    
+		    // 카카오 사용자 여부 확인 
+		    const emailInput = document.getElementById('email');
+		    const isKakaoUser = emailInput.readOnly || validationState.isKakaoUser;
+    
 		    // 회원가입 데이터 준비
 		    const signupData = {
 		        email: document.getElementById('email').value,
@@ -1280,7 +1415,8 @@
 		        age: parseInt(document.getElementById('age').value),
 		        town: fullAddress,  // 조합된 주소 사용
 		        gender: selectedGender,
-		        sports: selectedSports
+		        sports: selectedSports,
+		        isKakaoUser: isKakaoUser
 		    };
 		    
 		    try {
@@ -1319,4 +1455,3 @@
     </script>
     </body>
 </html>
-            
