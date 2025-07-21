@@ -24,6 +24,7 @@ public class MyPageController {
         return ResponseEntity.ok(myPageService.getMyPage(email));
     }
 
+    // 임시 메서드
 	private String extractEmailFromToken(String token) {
 		return token.replace("Bearer ", "");
 	}
