@@ -8,7 +8,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class EditMyPageRequest {
-    private String username;
+    private String nickName;
     private Sports sports;
     private Integer age;
 }
