@@ -1,6 +1,18 @@
 package com.matchFit.post.service;
 
 
+
+
+import com.matchFit.participation.repository.ParticipationRepository;
+import com.matchFit.post.dto.PostInfoResponseDto;
+import com.matchFit.post.dto.PostRequestDto;
+
+
+
+		
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
+
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.YearMonth;
@@ -20,13 +32,15 @@ import com.matchFit.post.entity.Sports;
 import com.matchFit.post.repository.PostRepository;
 import com.matchFit.user.entity.Gender;
 
+@Transactional
 @Service
+@RequiredArgsConstructor
 public class PostService {
 
+	private final ParticipationRepository participationRepository;
     private final PostRepository postRepository;
-    public PostService(PostRepository postRepository) {
-        this.postRepository = postRepository;
-    }
+    
+  
 
     public GetPostsList findByFilters(Sports sports, Gender gender, boolean nearest, LocalDate date) {
         
@@ -71,5 +85,26 @@ public class PostService {
             .collect(Collectors.toList());
         // 5. 전체 결과를 GetPostsCalender로 감싸서 반환
         return GetPostsCalender.of(calendarEntries);
+	}
+	
+	// 모집 글 생성
+	public Post create(PostRequestDto dto) {
+		return postRepository.save(dto.toEntity());
+	}
+	
+	// 모집 글 상세 조회
+	public PostInfoResponseDto searchPost(Long postId, Long userId) {
+		Post post = postRepository.findById(postId)
+				.orElseThrow(()-> new IllegalArgumentException("해당 게시글이 없습니다."));
+
+		int currentParticipantsCount = participationRepository.countByPostId(postId);
+		
+		boolean isBookmarked = false; 
+
+	    if (userId != null) {
+	        isBookmarked = participationRepository.existsByPostIdAndUserIdAndFollowTrue(postId, userId);
+	    }
+		
+		return new PostInfoResponseDto(post, currentParticipantsCount, isBookmarked);
 	}
 }

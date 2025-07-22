@@ -75,6 +75,13 @@
 			<artifactId>spring-security-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+
+
+		<dependency>
+        	<groupId>org.springframework.boot</groupId>
+       		<artifactId>spring-boot-starter-web</artifactId> <!-- ✅ 반드시 필요 -->
+   		</dependency>
+
 		<dependency>
 		    <groupId>org.springframework.boot</groupId>
 		    <artifactId>spring-boot-starter-security</artifactId>
@@ -114,9 +121,12 @@
 		    <version>0.11.5</version>
 		    <scope>runtime</scope>
 		</dependency>
+<<<<<<< HEAD
+=======
 =======
 >>>>>>> d50fa2b (feat: enum -> string 변환 컨버터 구현)
 
+>>>>>>> 33c676e06b92decb32099a1b144a696ac6eea7be
 	</dependencies>
 
 	<build>
