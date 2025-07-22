@@ -1,12 +1,13 @@
-package com.matchFit.post;
+package com.matchFit.post.service;
 
 import org.springframework.stereotype.Service;
 
 import com.matchFit.post.entity.Post;
+import com.matchFit.post.repository.PostRepository;
 
 import jakarta.transaction.Transactional;
 
-import com.matchFit.participation.entity.ParticipationRepository;
+import com.matchFit.participation.repository.ParticipationRepository;
 import com.matchFit.post.dto.PostInfoResponseDto;
 import com.matchFit.post.dto.PostRequestDto;
 
