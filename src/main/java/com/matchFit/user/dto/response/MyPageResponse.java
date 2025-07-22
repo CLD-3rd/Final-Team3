@@ -11,7 +11,7 @@ import lombok.Getter;
 @AllArgsConstructor
 public class MyPageResponse {
     private String email;
-    private String nickName;
+    private String username;
     private String town;
     private Integer age;
     private Sports sports;

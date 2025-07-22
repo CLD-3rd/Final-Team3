@@ -22,7 +22,7 @@ public class MyPageService {
 
         return MyPageResponse.builder()
                 .email(user.getEmail())
-                .nickName(user.getUsername())
+                .username(user.getUsername())
                 .town(user.getTown())
                 .age(user.getAge())
                 .sports(user.getSports())
@@ -36,13 +36,13 @@ public class MyPageService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
-        user.setUsername(req.getNickName());
+        user.setUsername(req.getUsername());
         user.setAge(req.getAge());
         user.setSports(req.getSports());
 
         return MyPageResponse.builder()
                 .email(user.getEmail())
-                .nickName(user.getUsername())
+                .username(user.getUsername())
                 .town(user.getTown())
                 .age(user.getAge())
                 .sports(user.getSports())
