@@ -103,6 +103,7 @@
 		    <version>0.11.5</version>
 		    <scope>runtime</scope>
 		</dependency>
+<<<<<<< HEAD
 		<dependency>
 		    <groupId>io.jsonwebtoken</groupId>
 		    <artifactId>jjwt-api</artifactId>
@@ -120,6 +121,12 @@
 		    <version>0.11.5</version>
 		    <scope>runtime</scope>
 		</dependency>
+<<<<<<< HEAD
+=======
+=======
+>>>>>>> d50fa2b (feat: enum -> string 변환 컨버터 구현)
+
+>>>>>>> 33c676e06b92decb32099a1b144a696ac6eea7be
 	</dependencies>
 
 	<build>

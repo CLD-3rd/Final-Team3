@@ -1,8 +1,6 @@
 package com.matchFit.user.config;
 
-import com.matchFit.user.jwt.JwtAuthenticationFilter;
-import com.matchFit.user.jwt.JwtProvider;
-import com.matchFit.user.service.CustomUserDetailsService;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -16,6 +14,11 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import com.matchFit.user.jwt.JwtAuthenticationFilter;
+import com.matchFit.user.jwt.JwtProvider;
+import com.matchFit.user.service.CustomUserDetailsService;
+
+
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
@@ -27,6 +30,7 @@ public class SecurityConfig {
         this.jwtProvider = jwtProvider;
         this.userDetailsService = userDetailsService;
     }
+
 
     @Bean
     public PasswordEncoder passwordEncoder() {

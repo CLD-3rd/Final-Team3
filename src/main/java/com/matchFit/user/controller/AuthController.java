@@ -131,7 +131,7 @@ public class AuthController {
         
         return ResponseEntity.ok(Collections.singletonMap("authenticated", false));
     }
-    
+
     @Autowired
     private JwtProvider jwtProvider;
     
