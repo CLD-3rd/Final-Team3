@@ -33,13 +33,10 @@ public class PostController {
 	@GetMapping("/api/posts/{postId}")
 	public ResponseEntity<PostInfoResponseDto> getPostDetail(
 							@PathVariable Long postId,
-							HttpServletRequest request){
-		// 로그인 한 사용자 정보 이용
-		HttpSession session = request.getSession(false);
-		    Long userId = null;
-		    if (session != null && session.getAttribute("userId") != null) {
-		        userId = (Long) session.getAttribute("userId");
-		    }
+							@AuthenticationPrincipal UserDetails userDetails){
+		
+		String email = userDetails.getUsername();
+		Long userId = userService.findUserIdByEmail(email); // 서비스에서 userId 조회
 
 		PostInfoResponseDto dto = postService.searchPost(postId, userId);
 		return ResponseEntity.ok(dto); 
