@@ -37,9 +37,12 @@ public class PostController {
 							@PathVariable Long postId,
 							@AuthenticationPrincipal UserDetails userDetails){
 		
-		String email = userDetails.getUsername();
-		Long userId = userService.findUserIdByEmail(email); // 서비스에서 userId 조회
-
+		Long userId = null;
+	    if (userDetails != null) {
+	        String email = userDetails.getUsername();
+	        userId = userService.findUserIdByEmail(email); // 서비스에서 userId 조회
+	    }
+  
 		PostInfoResponseDto dto = postService.searchPost(postId, userId);
 		return ResponseEntity.ok(dto); 
 	}

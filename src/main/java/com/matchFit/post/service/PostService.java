@@ -29,7 +29,12 @@ public class PostService {
 				.orElseThrow(()-> new IllegalArgumentException("해당 게시글이 없습니다."));
 
 		int currentParticipantsCount = participationRepository.countByPostId(postId);
-		boolean isBookmarked = participationRepository.existsByPostIdAndUserIdAndFollowTrue(postId, userId);
+		
+		boolean isBookmarked = false; 
+
+	    if (userId != null) {
+	        isBookmarked = participationRepository.existsByPostIdAndUserIdAndFollowTrue(postId, userId);
+	    }
 		
 		return new PostInfoResponseDto(post, currentParticipantsCount, isBookmarked);
 	}
