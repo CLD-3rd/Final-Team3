@@ -42,3 +42,5 @@ bin/
 .classpath
 .project
 .factorypath
+
+*.properties
