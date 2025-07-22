@@ -1,10 +1,12 @@
 package com.matchFit.user.controller;
 
 
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -15,6 +17,7 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.client.RestTemplate;
 
 import com.matchFit.user.entity.User;
@@ -29,6 +32,26 @@ public class KakaoOAuthController {
     
     @Autowired
     private JwtProvider jwtProvider;
+    
+    @Value("${kakao.client-id}")
+    private String kakaoClientId;
+    
+    @Value("${kakao.redirect-uri.signup}")
+    private String kakaoSignupRedirectUri;
+    
+    @Value("${kakao.redirect-uri.login}")
+    private String kakaoLoginRedirectUri;
+    
+    // 카카오 설정 API 추가
+    @GetMapping("/api/kakao-config")
+    @ResponseBody
+    public Map<String, String> getKakaoConfig() {
+        Map<String, String> config = new HashMap<>();
+        config.put("clientId", kakaoClientId);
+        config.put("signupRedirectUri", kakaoSignupRedirectUri);
+        config.put("loginRedirectUri", kakaoLoginRedirectUri);
+        return config;
+    }
     
     // 카카오 회원가입용 콜백
     @GetMapping("/api/user/oauth/kakao/callback")
