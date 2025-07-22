@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.ModelAndView;
 
 import com.matchFit.post.entity.Sports;
 import com.matchFit.user.dto.request.SignUpRequest;
@@ -34,6 +35,12 @@ public class AuthController {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    // 회원가입 - GET 요청 (HTML 페이지 반환)
+    @GetMapping("/signup")
+    public ModelAndView signupPage() {
+        return new ModelAndView("forward:/signup.html");
+    }
 
     @PostMapping("/signup")
     public ResponseEntity<?> registerUser(@RequestBody SignUpRequest signUpRequest) {
@@ -92,6 +99,12 @@ public class AuthController {
         return ResponseEntity.ok("사용 가능한 닉네임입니다.");
     }
     
+    // 로그인 - GET 요청 (HTML 페이지 반환)
+    @GetMapping("/login")
+    public ModelAndView loginPage() {
+        return new ModelAndView("forward:/login.html");
+    }
+    
     // 현재 로그인한 사용자 정보 조회
     @GetMapping("/current-user")
     public ResponseEntity<Map<String, Object>> getCurrentUser() {
@@ -147,6 +160,9 @@ public class AuthController {
         return ResponseEntity.ok(Collections.singletonMap("token", jwt));
         
     }
+    
+    
+    
 
     
     @GetMapping("/me")
