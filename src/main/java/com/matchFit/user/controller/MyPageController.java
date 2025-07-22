@@ -1,5 +1,6 @@
 package com.matchFit.user.controller;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -24,18 +25,37 @@ public class MyPageController {
     private final JwtProvider jwtProvider;
 
     @GetMapping
-    public ResponseEntity<MyPageResponse> getMyPage(@RequestHeader("Authorization") String authHeader) {
-        String email = jwtProvider.getEmailFromToken(authHeader.substring(7));
-        return ResponseEntity.ok(myPageService.getMyPage(email));
+    public ResponseEntity<?> getMyPage(@RequestHeader(value = "Authorization", required = false) String authHeader) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Authorization 헤더가 유효하지 않습니다.");
+        }
+
+        String token = authHeader.substring(7); // "Bearer " 제외
+        if (!jwtProvider.isTokenValid(token)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("유효하지 않은 JWT입니다.");
+        }
+
+        String email = jwtProvider.getEmailFromToken(token);
+        MyPageResponse response = myPageService.getMyPage(email);
+        return ResponseEntity.ok(response);
     }
 
     @PutMapping
-    public ResponseEntity<MyPageResponse> editMyPage(
-            @RequestHeader("Authorization") String authHeader,
+    public ResponseEntity<?> editMyPage(
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
             @RequestBody EditMyPageRequest request
     ) {
-        String email = jwtProvider.getEmailFromToken(authHeader.substring(7));
-        return ResponseEntity.ok(myPageService.editMyPage(email, request));
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Authorization 헤더가 유효하지 않습니다.");
+        }
+
+        String token = authHeader.substring(7);
+        if (!jwtProvider.isTokenValid(token)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("유효하지 않은 JWT입니다.");
+        }
+
+        String email = jwtProvider.getEmailFromToken(token);
+        MyPageResponse response = myPageService.editMyPage(email, request);
+        return ResponseEntity.ok(response);
     }
-    
 }
