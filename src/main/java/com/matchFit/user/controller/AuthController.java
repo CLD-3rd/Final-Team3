@@ -1,4 +1,4 @@
-package com.matchFit.user.entity;
+package com.matchFit.user.controller;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -6,6 +6,8 @@ import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -15,10 +17,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.matchFit.post.entity.Sports;
+import com.matchFit.user.dto.request.SignUpRequest;
+import com.matchFit.user.entity.Gender;
+import com.matchFit.user.entity.User;
+import com.matchFit.user.jwt.JwtProvider;
+import com.matchFit.user.repository.UserRepository;
 
 import io.jsonwebtoken.Claims;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
 
 @RestController
 @RequestMapping("/api/user")
@@ -89,16 +94,16 @@ public class AuthController {
     
     // 현재 로그인한 사용자 정보 조회
     @GetMapping("/current-user")
-    public ResponseEntity<Map<String, Object>> getCurrentUser(HttpServletRequest request) {
-        HttpSession session = request.getSession(false);
-        
-        if (session == null || session.getAttribute("userEmail") == null) {
+    public ResponseEntity<Map<String, Object>> getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated()) {
             return ResponseEntity.ok(Collections.singletonMap("authenticated", false));
         }
-        
-        String currentEmail = (String) session.getAttribute("userEmail");
-        User user = userRepository.findByEmail(currentEmail).orElse(null);
-        
+
+        String email = authentication.getName();
+        User user = userRepository.findByEmail(email).orElse(null);
+
         if (user != null) {
             Map<String, Object> userInfo = new HashMap<>();
             userInfo.put("authenticated", true);
