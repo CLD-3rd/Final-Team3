@@ -1,4 +1,4 @@
-package com.matchFit.user.entity;
+package com.matchFit.user.repository;
 
 import com.matchFit.user.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;

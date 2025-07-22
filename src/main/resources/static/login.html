@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>로그인 - 스포츠 메이트</title>
+    <script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.5/kakao.min.js" integrity="sha384-dok87au0gKqJdxs7msEdBPNnKSRT+/mhTVzq+qOhcL464zXwvcrpjeWvyj1kCdq6" crossorigin="anonymous"></script>
     <style>
         * {
             margin: 0;
@@ -541,11 +542,27 @@
   </div>
 
   <script>
+	document.addEventListener('DOMContentLoaded', function() {
+        // 카카오 SDK 초기화
+        if (typeof Kakao !== 'undefined') {
+            Kakao.init('ae217452e8bbfd6450ca5024a003504e');
+            console.log('카카오 SDK 초기화 완료');
+        }
+
+       
+    });
     let rememberMe = false;
     let showPassword = false;
 
     function socialLogin(provider) {
-      alert("소셜 로그인은 준비 중입니다.");
+      if (typeof Kakao === 'undefined') {
+            alert('카카오 SDK가 로드되지 않았습니다.');
+            return;
+        }
+
+        Kakao.Auth.authorize({
+            redirectUri: 'http://localhost:8083/api/user/oauth/kakao/login-callback'  // 로그인용 콜백 URL
+        });
     }
 
     function togglePassword() {

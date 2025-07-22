@@ -1,4 +1,4 @@
-package com.matchFit.user.entity;
+package com.matchFit.user.dto.request;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -13,4 +13,5 @@ public class SignUpRequest {
     private String gender;
     private String town;
     private String sports;
+    private boolean isKakaoUser;
 }
