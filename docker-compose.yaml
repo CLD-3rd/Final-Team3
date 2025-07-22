@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:latest
+    container_name: redis
+    restart: always
+    command: redis-server --requirepass redis1234
+    volumes:
+      - redis_volume_data:/data
+    ports:
+      - 6379:6379
+
+  redis-insight:
+    image: redislabs/redisinsight:latest
+    container_name: redis_insight
+    restart: always
+    volumes:
+      - redis_insight_volume_data:/db
+    network_mode: "host"
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: matchFit
+      MYSQL_USER: username
+      MYSQL_PASSWORD: password
+    volumes:
+      - mysql_volume_data:/var/lib/mysql
+    restart: unless-stopped
+
+volumes:
+  redis_volume_data:
+  redis_insight_volume_data:
+  mysql_volume_data:
