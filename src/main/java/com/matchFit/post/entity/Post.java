@@ -70,5 +70,9 @@ public class Post extends BaseEntity {
 	
 	@Column(nullable = false)
 	private String location;
+
+	@ManyToOne
+	@JoinColumn(name = "user_id")
+	private User user;
 	
 }
