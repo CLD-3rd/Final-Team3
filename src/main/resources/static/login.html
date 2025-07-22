@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>로그인 - 스포츠 메이트</title>
+    <script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.5/kakao.min.js" integrity="sha384-dok87au0gKqJdxs7msEdBPNnKSRT+/mhTVzq+qOhcL464zXwvcrpjeWvyj1kCdq6" crossorigin="anonymous"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Apple SD Gothic Neo', -apple-system, BlinkMacSystemFont, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+            padding: 20px 0;
+        }
+
+        .container {
+            max-width: 700px;
+            width: 90%;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+            position: relative;
+            margin: 40px; 
+        }
+
+        /* 헤더 */
+        .header {
+            padding: 50px 20px 40px;
+            text-align: center;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+		.header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background:  rgb(94, 172, 172);
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        .logo {
+            font-size: 36px;
+            margin-bottom: 10px;
+        }
+
+        .app-name {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .app-desc {
+            font-size: 16px;
+            opacity: 0.9;
+            font-weight: 400;
+        }
+
+        /* 로그인 폼 */
+        .login-form {
+            padding: 50px 50px;
+        }
+
+        .welcome-text {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .welcome-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 8px;
+        }
+
+        .welcome-subtitle {
+            font-size: 14px;
+            color: #64748b;
+        }
+
+        /* 소셜 로그인 */
+        .social-login {
+            margin-bottom: 30px;
+        }
+
+        .social-btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .social-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.6s;
+        }
+
+        .social-btn:hover::before {
+            left: 100%;
+        }
+
+        .social-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .kakao-btn {
+            background: #fee500;
+            color: #3c1e1e;
+        }
+
+        .kakao-btn:hover {
+            background: #fdd835;
+        }
+
+        .social-icon {
+            font-size: 20px;
+        }
+
+        /* 구분선 */
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 30px 0;
+        }
+
+        .divider-line {
+            flex: 1;
+            height: 1px;
+            background: #e2e8f0;
+        }
+
+        .divider-text {
+            padding: 0 20px;
+            font-size: 14px;
+            color: #64748b;
+            background: white;
+        }
+
+        /* 일반 로그인 폼 */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 8px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 16px 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s;
+            background: #f8fafc;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #408080;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .form-input.error {
+            border-color: #ef4444;
+            background: #fef2f2;
+        }
+
+        .error-message {
+            color: #ef4444;
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .password-wrapper {
+            position: relative;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #64748b;
+            font-size: 16px;
+            padding: 5px;
+        }
+
+        .password-toggle:hover {
+            color: #408080;
+        }
+
+        /* 로그인 옵션 */
+        .login-options {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .remember-me {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .checkbox {
+            width: 18px;
+            height: 18px;
+            border: 2px solid #e2e8f0;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .checkbox.checked {
+            background: #408080;
+            border-color: #408080;
+            color: white;
+        }
+
+        .checkbox.checked::after {
+            content: '✓';
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .checkbox-label {
+            font-size: 14px;
+            color: #64748b;
+            cursor: pointer;
+        }
+
+        .forgot-link {
+            color: #408080;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .forgot-link:hover {
+            text-decoration: underline;
+        }
+
+        /* 로그인 버튼 */
+        .login-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #408080 0%, #06b6d4 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgb(48, 95, 95);
+            margin-bottom: 20px;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgb(48, 95, 95);
+        }
+
+        .login-btn:disabled {
+            background: #e2e8f0;
+            color: #94a3b8;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* 회원가입 링크 */
+        .signup-link {
+            text-align: center;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .signup-text {
+            font-size: 14px;
+            color: #64748b;
+        }
+
+        .signup-btn {
+            color: #408080;
+            text-decoration: none;
+            font-weight: 600;
+            margin-left: 5px;
+        }
+
+        .signup-btn:hover {
+            text-decoration: underline;
+        }
+
+        /* 최근 로그인 방법 */
+        .recent-login {
+            background: #f0f7ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .recent-login-icon {
+            font-size: 16px;
+            color: #1d4ed8;
+        }
+
+        .recent-login-text {
+            font-size: 13px;
+            color: #1e40af;
+        }
+
+        .recent-login-method {
+            font-weight: 600;
+            color: #1d4ed8;
+        }
+
+        /* 로딩 상태 */
+        .loading {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 9999;
+        }
+
+        .loading-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            text-align: center;
+            max-width: 280px;
+            width: 90%;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f4f6;
+            border-top: 4px solid #408080;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-size: 16px;
+            color: #64748b;
+        }
+
+        /* 성공/에러 메시지 */
+        .message {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .message.success {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            color: #166534;
+        }
+
+        .message.error {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+        }
+
+        /* 반응형 */
+        @media (max-width: 480px) {
+            .container {
+                width: 95%;
+                margin: 20px auto;
+            }
+            
+            .login-form {
+                padding: 30px 20px;
+            }
+            
+            .welcome-title {
+                font-size: 22px;
+            }
+        }
+    </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="header-content">
+        <div class="logo">⚽</div>
+        <div class="app-name">스포츠 메이트</div>
+        <div class="app-desc">함께 운동하는 즐거움</div>
+      </div>
+    </div>
+
+    <div class="login-form">
+      <div class="welcome-text">
+        <div class="welcome-title">환영합니다!</div>
+        <div class="welcome-subtitle">로그인하여 운동 메이트를 찾아보세요</div>
+      </div>
+
+      <!-- 메시지 표시 영역 -->
+      <div class="message" id="messageBox"></div>
+
+      <!-- 소셜 로그인 -->
+      <div class="social-login">
+        <button class="social-btn kakao-btn" onclick="kakaoLogin()">
+          <span class="social-icon">💬</span>
+          <span>카카오로 로그인</span>
+        </button>
+      </div>
+
+      <!-- 구분선 -->
+      <div class="divider">
+        <div class="divider-line"></div>
+        <div class="divider-text">또는</div>
+        <div class="divider-line"></div>
+      </div>
+
+      <!-- 일반 로그인 폼 -->
+      <form onsubmit="return handleLogin(event)">
+        <div class="form-group">
+          <label class="form-label">이메일</label>
+          <input type="email" class="form-input" id="email" placeholder="이메일을 입력하세요" required />
+          <div class="error-message" id="emailError">올바른 이메일을 입력해주세요</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">비밀번호</label>
+          <div class="password-wrapper">
+            <input type="password" class="form-input" id="password" placeholder="비밀번호를 입력하세요" required />
+            <button type="button" class="password-toggle" onclick="togglePassword()">👁️</button>
+          </div>
+          <div class="error-message" id="passwordError">비밀번호를 입력해주세요</div>
+        </div>
+
+        <div class="login-options">
+          <div class="remember-me">
+            <div class="checkbox" onclick="toggleRememberMe()" id="rememberCheckbox"></div>
+            <label class="checkbox-label" onclick="toggleRememberMe()">로그인 상태 유지</label>
+          </div>
+        </div>
+
+        <button type="submit" class="login-btn">로그인</button>
+      </form>
+
+      <div class="signup-link">
+        <span class="signup-text">아직 계정이 없으신가요?</span>
+        <a href="/signup" class="signup-btn">회원가입</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- 로딩 모달 -->
+  <div class="loading" id="loadingModal">
+    <div class="loading-content">
+      <div class="loading-spinner"></div>
+      <div class="loading-text">로그인 중...</div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 카카오 SDK 초기화
+        if (typeof Kakao !== 'undefined') {
+            Kakao.init('ae217452e8bbfd6450ca5024a003504e');
+            console.log('카카오 SDK 초기화 완료');
+        }
+        
+
+        // 에러 메시지 표시
+        const urlParams = new URLSearchParams(window.location.search);
+        const error = urlParams.get('error');
+        
+        // 카카오 로그인 후 받은 토큰 저장
+        const kakaoToken = urlParams.get('kakaoToken');
+	    if (kakaoToken) {
+	        localStorage.setItem('jwt', kakaoToken);
+	        window.location.href = "/main";
+	    }
+    
+        if (error === 'true') {
+            const messageBox = document.getElementById('messageBox');
+            messageBox.classList.add('error', 'message');
+            messageBox.textContent = '이메일 또는 비밀번호가 올바르지 않습니다.';
+            messageBox.style.display = 'block';
+        }
+    });
+
+    let rememberMe = false;
+    let showPassword = false;
+
+    // 카카오 로그인
+    function kakaoLogin() {
+        if (typeof Kakao === 'undefined') {
+            alert('카카오 SDK가 로드되지 않았습니다.');
+            return;
+        }
+
+        Kakao.Auth.authorize({
+            redirectUri: 'http://localhost:8083/api/user/oauth/kakao/login-callback'  // 로그인용 콜백 URL
+        });
+    }
+
+    function togglePassword() {
+        const passwordInput = document.getElementById("password");
+        const toggleBtn = document.querySelector(".password-toggle");
+        showPassword = !showPassword;
+        passwordInput.type = showPassword ? "text" : "password";
+        toggleBtn.textContent = showPassword ? "🙈" : "👁️";
+    }
+
+    function toggleRememberMe() {
+        const checkbox = document.getElementById("rememberCheckbox");
+        rememberMe = !rememberMe;
+        checkbox.classList.toggle("checked", rememberMe);
+    }
+
+    // 일반 로그인 처리
+    async function handleLogin(event) {
+        event.preventDefault();
+        
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
+        
+        if (!validateForm()) {
+            return false;
+        }
+
+        // 로딩 표시
+        document.getElementById('loadingModal').style.display = 'block';
+
+        try {
+            const response = await fetch('/api/user/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email: email,
+                    password: password
+                })
+            });
+
+            if (response.ok) {
+				const result = await response.json(); // 서버 응답: { token: '...' }
+   				console.log(result.token); 
+   				localStorage.setItem('jwt', result.token); // 토큰 저장
+   				
+                // 로그인 성공 - 메인 페이지로 이동
+                window.location.href = '/main';
+            } else {
+                const error = await response.text();
+                showMessage('error', error);
+            }
+        } catch (error) {
+            showMessage('error', '로그인 중 오류가 발생했습니다.');
+        }
+
+        // 로딩 숨김
+        document.getElementById('loadingModal').style.display = 'none';
+        
+        return false;
+    }
+
+    function validateForm() {
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
+        let valid = true;
+
+        const emailInput = document.getElementById("email");
+        const passwordInput = document.getElementById("password");
+        const emailError = document.getElementById("emailError");
+        const passwordError = document.getElementById("passwordError");
+
+        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            emailInput.classList.add("error");
+            emailError.style.display = "block";
+            valid = false;
+        } else {
+            emailInput.classList.remove("error");
+            emailError.style.display = "none";
+        }
+
+        if (!password) {
+            passwordInput.classList.add("error");
+            passwordError.style.display = "block";
+            valid = false;
+        } else {
+            passwordInput.classList.remove("error");
+            passwordError.style.display = "none";
+        }
+
+        return valid;
+    }
+
+    function showMessage(type, message) {
+        const messageBox = document.getElementById('messageBox');
+        messageBox.className = `message ${type}`;
+        messageBox.textContent = message;
+        messageBox.style.display = 'block';
+    }
+  </script>
+</body>
+</html>
