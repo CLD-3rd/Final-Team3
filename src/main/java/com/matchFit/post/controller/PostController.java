@@ -1,5 +1,6 @@
 package com.matchFit.post.controller;
 
+import java.time.LocalDate;
 import java.time.YearMonth;
 
 import org.springframework.format.annotation.DateTimeFormat;
@@ -28,9 +29,11 @@ public class PostController {
     public ResponseEntity<GetPostsList> getPostsList(
 		@RequestParam(required = false) Sports sports,
         @RequestParam(required = false) Gender gender,
-        @RequestParam(required = false, defaultValue = "false") boolean nearest
+        @RequestParam(required = false, defaultValue = "false") boolean nearest,
+        @RequestParam(required = true)
+	    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
     ) {
-        GetPostsList postsList = postService.findByFilters(sports, gender, nearest);
+        GetPostsList postsList = postService.findByFilters(sports, gender, nearest, date);
         return ResponseEntity.ok(postsList);
     }
 	

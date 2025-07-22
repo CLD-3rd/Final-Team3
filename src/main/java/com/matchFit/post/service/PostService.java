@@ -28,12 +28,13 @@ public class PostService {
         this.postRepository = postRepository;
     }
 
-    public GetPostsList findByFilters(Sports sports, Gender gender, boolean nearest) {
+    public GetPostsList findByFilters(Sports sports, Gender gender, boolean nearest, LocalDate date) {
         
         List<Post> posts = postRepository.findByFilters(
             sports != null ? sports.name() : null, 
             gender != null ? gender.name() : null, 
-            nearest
+            nearest,
+            date
         );
         
 		List<GetPost> postDtos = GetPost.from(posts);
