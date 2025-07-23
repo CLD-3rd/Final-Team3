@@ -21,11 +21,15 @@ import lombok.RequiredArgsConstructor;
 public class ParticipationController {
     
     private final ParticipationService participationService;
-    // JWT 토큰에서 사용자 ID를 추출하는 서비스
-    private final JwtProvider jwtTokenProvider; 
+    // JWT 토큰에서 사용자 ID를 추출하는 서비스 (구현되어 있다고 가정)
+    private final JwtProvider jwtTokenProvider; // 이 부분은 실제 JWT 구현에 맞게 조정
+    
     @GetMapping("/apply")
     public ResponseEntity<List<GetMyPostsParticipationResponseDto>> getMyApplications(
-            @RequestHeader("Authorization") String token) {
+            @RequestHeader("Authorization") String authorization) {
+        
+        // "Bearer " 접두사 제거하고 실제 토큰만 추출
+        String token = authorization.replace("Bearer ", "");
         
         // JWT 토큰에서 사용자 ID 추출
         Long userId = jwtTokenProvider.getUserIdFromToken(token);
