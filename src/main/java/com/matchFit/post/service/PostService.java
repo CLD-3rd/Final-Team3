@@ -16,6 +16,8 @@ import com.matchFit.participation.entity.ApplicationStatus;
 import com.matchFit.participation.repository.ParticipationRepository;
 import com.matchFit.post.dto.PostInfoResponseDto;
 import com.matchFit.post.dto.PostRequestDto;
+import com.matchFit.post.dto.UpdatePostRequestDto;
+import com.matchFit.post.dto.UpdatePostResponseDto;
 import com.matchFit.post.dto.response.GetMyPost;
 import com.matchFit.post.dto.response.GetMyPosts;
 import com.matchFit.post.dto.response.GetPost;
@@ -130,4 +132,34 @@ public class PostService {
             .collect(Collectors.toList());
         return GetMyPosts.of(myPosts);
     }
+	
+	@Transactional
+	public UpdatePostResponseDto updatePost(Long postId, UpdatePostRequestDto request, CustomUserDetails userDetails) {
+	    // 게시글 조회
+	    Post post = postRepository.findById(postId)
+	        .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 모집글입니다."));
+	    
+	    // 작성자 권한 확인
+	    User currentUser = userDetails.getUser();
+	    if (!post.getUser().getId().equals(currentUser.getId())) {
+	        throw new IllegalArgumentException("본인이 작성한 글만 수정할 수 있습니다.");
+	    }
+	    
+	    // 게시글 정보 업데이트
+	    post.setTitle(request.getTitle());
+	    post.setDescription(request.getDescription());
+	    post.setLocation(request.getLocation());
+	    post.setDate(request.getDate());
+	    post.setMaxPeople(request.getMaxPeople());
+	    post.setGender(request.getGender());
+	    post.setStatus(request.getStatus());
+	    post.setCost(request.getCost());
+	    post.setImageUrl(request.getImageUrl());
+	    post.setSports(request.getSports());
+	    post.setTown(request.getTown());
+	    
+	    Post updatedPost = postRepository.save(post);
+	    
+	    return UpdatePostResponseDto.from(updatedPost);
+	}
 }

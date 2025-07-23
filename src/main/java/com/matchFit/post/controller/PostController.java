@@ -11,6 +11,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -20,6 +21,8 @@ import com.matchFit.participation.dto.response.MessageResponse;
 import com.matchFit.participation.service.ParticipationService;
 import com.matchFit.post.dto.PostInfoResponseDto;
 import com.matchFit.post.dto.PostRequestDto;
+import com.matchFit.post.dto.UpdatePostRequestDto;
+import com.matchFit.post.dto.UpdatePostResponseDto;
 import com.matchFit.post.dto.response.GetMyPostApplicants;
 import com.matchFit.post.dto.response.GetMyPosts;
 import com.matchFit.post.dto.response.GetPostsCalender;
@@ -118,4 +121,13 @@ public class PostController {
 	    return ResponseEntity.ok(applicants);
 	}
 
+	@PutMapping("/{postId}")
+	public ResponseEntity<UpdatePostResponseDto> updatePost(
+	    @PathVariable Long postId,
+	    @RequestBody UpdatePostRequestDto request,
+	    @AuthenticationPrincipal CustomUserDetails userDetails) {
+	    
+		UpdatePostResponseDto response = postService.updatePost(postId, request, userDetails);
+	    return ResponseEntity.ok(response);
+	}
 }
