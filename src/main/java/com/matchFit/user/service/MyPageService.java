@@ -26,8 +26,6 @@ public class MyPageService {
                 .town(user.getTown())
                 .age(user.getAge())
                 .sports(user.getSports())
-                .recruitCount(user.getRecruitCount())
-                .joinCount(user.getJoinCount())
                 .build();
     }
     
@@ -46,8 +44,6 @@ public class MyPageService {
                 .town(user.getTown())
                 .age(user.getAge())
                 .sports(user.getSports())
-                .recruitCount(user.getRecruitCount())
-                .joinCount(user.getJoinCount())
                 .build();
     }
 
