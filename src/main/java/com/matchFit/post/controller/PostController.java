@@ -1,6 +1,5 @@
 package com.matchFit.post.controller;
 
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,6 +29,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.matchFit.post.dto.response.GetPostsCalender;
 import com.matchFit.post.dto.response.GetPostsList;
+import com.matchFit.post.entity.Post;
 import com.matchFit.post.entity.Sports;
 import com.matchFit.user.entity.Gender;
 
@@ -45,13 +45,18 @@ public class PostController {
 	private final UserService userService;
 	private final ParticipationService participationService;
 	
+	// 모집글 생성
 	@PostMapping("")
-	public ResponseEntity<String> createPosts(@RequestBody PostRequestDto dto) {
-		postService.create(dto);
-		return ResponseEntity.status(HttpStatus.CREATED).body("모집글 생성 성공");		
+	public ResponseEntity<Post> createPost(@RequestBody PostRequestDto dto,
+											@AuthenticationPrincipal UserDetails userDetails ) {
+		
+		String email = userDetails.getUsername();
+        Long userId = userService.findUserIdByEmail(email);
+		Post post = postService.create(dto, userId);
+		return ResponseEntity.ok(post);		
 	}
 	
-	
+	// 모집글 상세 조회
 	@GetMapping("/{postId}")
 	public ResponseEntity<PostInfoResponseDto> getPostDetail(
 							@PathVariable Long postId,
@@ -78,7 +83,7 @@ public class PostController {
         
         try {
             participationService.applyPost(postId, userId);
-            return ResponseEntity.ok(new MessageResponse("신청이 완료 되었습니다."));
+            return ResponseEntity.ok(new MessageResponse("신청 완료 되었습니다."));
         } catch (IllegalStateException e) {
             return ResponseEntity.ok(new MessageResponse("마감되었습니다"));
         }
