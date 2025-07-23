@@ -74,8 +74,4 @@ public class Post extends BaseEntity {
 	@JoinColumn(name = "user_id")
 	private User user;
 	
-	@ManyToOne
-	@JoinColumn(name = "user_id")
-	private User user;
-	
 }
