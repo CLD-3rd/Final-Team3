@@ -4,9 +4,10 @@ import java.time.LocalDateTime;
 
 import com.matchFit.post.entity.Post;
 import com.matchFit.post.entity.Sports;
-import com.matchFit.post.entity.Town;
 import com.matchFit.post.entity.Status;
+import com.matchFit.post.entity.Town;
 import com.matchFit.user.entity.Gender;
+import com.matchFit.user.entity.User;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -27,7 +28,7 @@ public class PostRequestDto {
 	private Integer maxPeople;
 	private LocalDateTime date;
 	
-	public Post toEntity() {
+	public Post toEntity(User user) {
 		return Post.builder()
 				.title(this.title)
 				.description(this.description)
@@ -40,6 +41,7 @@ public class PostRequestDto {
 	            .town(this.town)
 	            .maxPeople(this.maxPeople)
 	            .date(this.date)
+	            .user(user)
 	            .build();
 	}
 }
