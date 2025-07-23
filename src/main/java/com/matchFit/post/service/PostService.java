@@ -3,16 +3,6 @@ package com.matchFit.post.service;
 
 
 
-import com.matchFit.participation.repository.ParticipationRepository;
-import com.matchFit.post.dto.PostInfoResponseDto;
-import com.matchFit.post.dto.PostRequestDto;
-
-
-
-		
-import jakarta.transaction.Transactional;
-import lombok.RequiredArgsConstructor;
-
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.YearMonth;
@@ -21,8 +11,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import com.matchFit.participation.repository.ParticipationRepository;
+import com.matchFit.post.dto.PostInfoResponseDto;
+import com.matchFit.post.dto.PostRequestDto;
+import com.matchFit.post.dto.response.GetMyPost;
+import com.matchFit.post.dto.response.GetMyPosts;
 import com.matchFit.post.dto.response.GetPost;
 import com.matchFit.post.dto.response.GetPostCalender;
 import com.matchFit.post.dto.response.GetPostsCalender;
@@ -31,6 +28,10 @@ import com.matchFit.post.entity.Post;
 import com.matchFit.post.entity.Sports;
 import com.matchFit.post.repository.PostRepository;
 import com.matchFit.user.entity.Gender;
+import com.matchFit.user.entity.User;
+import com.matchFit.user.security.CustomUserDetails;
+
+import lombok.RequiredArgsConstructor;
 
 @Transactional
 @Service
@@ -88,8 +89,9 @@ public class PostService {
 	}
 	
 	// 모집 글 생성
-	public Post create(PostRequestDto dto) {
-		return postRepository.save(dto.toEntity());
+	public Post create(PostRequestDto dto, @AuthenticationPrincipal CustomUserDetails userDetails) {
+		User currentUser = userDetails.getUser();
+		return postRepository.save(dto.toEntity(currentUser));
 	}
 	
 	// 모집 글 상세 조회
@@ -107,4 +109,22 @@ public class PostService {
 		
 		return new PostInfoResponseDto(post, currentParticipantsCount, isBookmarked);
 	}
+	
+	@Transactional(readOnly = true)
+	public GetMyPosts getMyPosts(@AuthenticationPrincipal CustomUserDetails userDetails) {
+		User currentUser = userDetails.getUser();
+	    System.out.println("currentUser = " + currentUser.getId());
+        List<Post> posts = postRepository.findByUserIdOrderByCreatedAtDesc(currentUser.getId());
+        System.out.println("posts = " + posts);
+        List<GetMyPost> myPosts = posts.stream()
+            .map(post -> new GetMyPost(
+                    post.getTitle(),
+                    post.getDate(),
+                    participationRepository.countByPostId(post.getId()),
+                    post.getMaxPeople(),
+                    post.getStatus().name()
+            ))
+            .collect(Collectors.toList());
+        return GetMyPosts.of(myPosts);
+    }
 }
