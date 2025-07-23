@@ -1,6 +1,5 @@
 package com.matchFit.participation.service;
 
-
 import java.util.List;
 
 import org.springframework.security.access.AccessDeniedException;
@@ -17,7 +16,6 @@ import com.matchFit.post.repository.PostRepository;
 import com.matchFit.user.entity.User;
 import com.matchFit.user.repository.UserRepository;
 import com.matchFit.user.security.CustomUserDetails;
-
 
 import lombok.RequiredArgsConstructor;
 

@@ -1,6 +1,5 @@
 package com.matchFit.post.controller;
 
-
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.Collections;
@@ -44,15 +43,13 @@ public class PostController {
 	private final UserService userService;
 	private final ParticipationService participationService;
 	
+
 	// 모집글 생성
-	@PostMapping("")
-	public ResponseEntity<Post> createPost(@RequestBody PostRequestDto dto,
-											@AuthenticationPrincipal UserDetails userDetails ) {
-		
-		String email = userDetails.getUsername();
-        Long userId = userService.findUserIdByEmail(email);
-		Post post = postService.create(dto, userId);
-		return ResponseEntity.ok(post);		
+	@PostMapping
+	public ResponseEntity<String> createPosts(@RequestBody PostRequestDto dto,
+			@AuthenticationPrincipal CustomUserDetails userDetails) {
+		postService.create(dto, userDetails);
+		return ResponseEntity.status(HttpStatus.CREATED).body("모집글 생성 성공");		
 
 	}
 	

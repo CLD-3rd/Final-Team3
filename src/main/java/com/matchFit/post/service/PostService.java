@@ -5,7 +5,6 @@ import com.matchFit.participation.repository.ParticipationRepository;
 import com.matchFit.post.dto.PostInfoResponseDto;
 import com.matchFit.post.dto.PostRequestDto;
 	
-import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 
 import java.time.LocalDate;
@@ -19,6 +18,7 @@ import java.util.stream.Collectors;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.matchFit.post.dto.response.GetMyPost;
 import com.matchFit.post.dto.response.GetMyPosts;
@@ -34,6 +34,7 @@ import com.matchFit.user.entity.Gender;
 import com.matchFit.user.entity.User;
 import com.matchFit.user.repository.UserRepository;
 import com.matchFit.user.security.CustomUserDetails;
+
 
 
 @Transactional
@@ -91,21 +92,9 @@ public class PostService {
 	}
 	
 	// 모집 글 생성
-	public Post create(PostRequestDto dto, Long userId) {	
-	    User user = userRepository.findById(userId)
-	            .orElseThrow(() -> new IllegalArgumentException("사용자 없음"));
-
-	    // 3. recruitCount 직접 증가 
-	    int currentRecruitCount = user.getRecruitCount(); 
-	    user.setRecruitCount(currentRecruitCount + 1);    
-	    userRepository.save(user);
-
-	    // 4. Post 생성 및 user 연결
-	    Post post = dto.toEntity(user);
-	    post.setUser(user);
-		
-		return postRepository.save(post);
-
+	public Post create(PostRequestDto dto, @AuthenticationPrincipal CustomUserDetails userDetails) {
+		User currentUser = userDetails.getUser();
+		return postRepository.save(dto.toEntity(currentUser));
 	}
 	
 	// 모집 글 상세 조회
