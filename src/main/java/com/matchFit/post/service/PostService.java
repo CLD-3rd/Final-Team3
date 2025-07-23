@@ -44,7 +44,6 @@ import com.matchFit.user.security.CustomUserDetails;
 
 import lombok.RequiredArgsConstructor;
 
-
 @Transactional
 @Service
 @RequiredArgsConstructor
@@ -143,7 +142,6 @@ public class PostService {
                     post.getDate(),
                     participationRepository.countByPost_IdAndStatus(post.getId(),ApplicationStatus.APPROVED),
                     post.getMaxPeople(),
-
                     post.getStatus().name()
             ))
             .collect(Collectors.toList());
