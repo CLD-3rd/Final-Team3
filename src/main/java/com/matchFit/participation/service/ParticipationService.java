@@ -1,5 +1,6 @@
 package com.matchFit.participation.service;
 
+<<<<<<< HEAD
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -24,12 +25,23 @@ import com.matchFit.post.repository.PostRepository;
 import com.matchFit.user.entity.User;
 import com.matchFit.user.repository.UserRepository;
 import com.matchFit.user.security.CustomUserDetails;
+=======
+import org.springframework.stereotype.Service;
+
+import com.matchFit.participation.entity.Participation;
+import com.matchFit.participation.repository.ParticipationRepository;
+import com.matchFit.post.entity.Post;
+import com.matchFit.post.repository.PostRepository;
+import com.matchFit.user.entity.User;
+import com.matchFit.user.repository.UserRepository;
+>>>>>>> bf9678a (feat: 모집글 신청 기능)
 
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
 public class ParticipationService {
+<<<<<<< HEAD
    
    private final ParticipationRepository participationRepository;
    private final UserRepository userRepository;
@@ -151,4 +163,32 @@ public class ParticipationService {
             participation.getStatus());
         
    }
+=======
+	
+	private final ParticipationRepository participationRepository;
+	private final UserRepository userRepository;
+	private final PostRepository postRepository;
+
+	// 모집 글 신청
+	public void applyPost(Long postId, Long userId) {
+		User user = userRepository.findById(userId)
+				.orElseThrow(() -> new IllegalArgumentException("사용자 없음"));
+				
+		Post post = postRepository.findById(postId)
+				.orElseThrow(() -> new IllegalArgumentException("모집 글이 존재하지 않습니다"));
+		
+		// 마감 체크
+		int currentPeople = participationRepository.countByPost_Id(postId);
+		
+	    if (currentPeople >= post.getMaxPeople()) {
+	        throw new IllegalStateException("마감되었습니다");
+	    }
+		
+		Participation participation = new Participation(user, post);
+		participationRepository.save(participation);
+		
+		
+	}
+
+>>>>>>> bf9678a (feat: 모집글 신청 기능)
 }

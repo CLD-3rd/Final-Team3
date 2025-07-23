@@ -30,4 +30,7 @@ public interface ParticipationRepository extends JpaRepository<Participation, Lo
   
 	Participation findByPostIdAndUserId(Long postId, Long userId);
 
+	int countByPost_Id(Long postId);
+	
 }
+
