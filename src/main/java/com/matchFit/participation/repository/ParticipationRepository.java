@@ -1,5 +1,7 @@
 package com.matchFit.participation.repository;
 
+import java.util.List;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.matchFit.participation.entity.ApplicationStatus;
@@ -15,4 +17,7 @@ public interface ParticipationRepository extends JpaRepository<Participation, Lo
 	// 신청 승인된 사용자만 count
 	int countByPost_IdAndStatus(Long postId, ApplicationStatus status);
 	
+	
+	List<Participation> findAllByPostId(Long postId);
+
 }
