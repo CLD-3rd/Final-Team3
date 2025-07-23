@@ -1,15 +1,10 @@
 package com.matchFit.post.service;
 
-
-
-
+import com.matchFit.participation.entity.ApplicationStatus;
 import com.matchFit.participation.repository.ParticipationRepository;
 import com.matchFit.post.dto.PostInfoResponseDto;
 import com.matchFit.post.dto.PostRequestDto;
-
-
-
-		
+	
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
@@ -21,6 +16,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import com.matchFit.post.dto.response.GetPost;
@@ -29,8 +26,11 @@ import com.matchFit.post.dto.response.GetPostsCalender;
 import com.matchFit.post.dto.response.GetPostsList;
 import com.matchFit.post.entity.Post;
 import com.matchFit.post.entity.Sports;
+import com.matchFit.post.entity.Status;
 import com.matchFit.post.repository.PostRepository;
 import com.matchFit.user.entity.Gender;
+import com.matchFit.user.entity.User;
+import com.matchFit.user.repository.UserRepository;
 
 @Transactional
 @Service
@@ -39,8 +39,7 @@ public class PostService {
 
 	private final ParticipationRepository participationRepository;
     private final PostRepository postRepository;
-    
-  
+    private final UserRepository userRepository;
 
     public GetPostsList findByFilters(Sports sports, Gender gender, boolean nearest, LocalDate date) {
         
@@ -88,8 +87,20 @@ public class PostService {
 	}
 	
 	// 모집 글 생성
-	public Post create(PostRequestDto dto) {
-		return postRepository.save(dto.toEntity());
+	public Post create(PostRequestDto dto, Long userId) {	
+	    User user = userRepository.findById(userId)
+	            .orElseThrow(() -> new IllegalArgumentException("사용자 없음"));
+
+	    // 3. recruitCount 직접 증가 
+	    int currentRecruitCount = user.getRecruitCount(); 
+	    user.setRecruitCount(currentRecruitCount + 1);    
+	    userRepository.save(user);
+
+	    // 4. Post 생성 및 user 연결
+	    Post post = dto.toEntity();
+	    post.setUser(user);
+		
+		return postRepository.save(post);
 	}
 	
 	// 모집 글 상세 조회
@@ -97,14 +108,17 @@ public class PostService {
 		Post post = postRepository.findById(postId)
 				.orElseThrow(()-> new IllegalArgumentException("해당 게시글이 없습니다."));
 
-		int currentParticipantsCount = participationRepository.countByPostId(postId);
+		int currentParticipantsCount = participationRepository.countByPost_IdAndStatus(postId, ApplicationStatus.APPROVED);
+		
+		if(currentParticipantsCount >= post.getMaxPeople()) {
+			post.setStatus(Status.CLOSED);
+			postRepository.save(post);
+		}
 		
 		boolean isBookmarked = false; 
-
 	    if (userId != null) {
 	        isBookmarked = participationRepository.existsByPostIdAndUserIdAndFollowTrue(postId, userId);
-	    }
-		
+	    }	
 		return new PostInfoResponseDto(post, currentParticipantsCount, isBookmarked);
 	}
 }
