@@ -20,6 +20,7 @@ import com.matchFit.participation.dto.response.MessageResponse;
 import com.matchFit.participation.service.ParticipationService;
 import com.matchFit.post.dto.PostInfoResponseDto;
 import com.matchFit.post.dto.PostRequestDto;
+import com.matchFit.post.dto.response.GetMyPostApplicants;
 import com.matchFit.post.dto.response.GetMyPosts;
 import com.matchFit.post.dto.response.GetPostsCalender;
 import com.matchFit.post.dto.response.GetPostsList;
@@ -107,5 +108,14 @@ public class PostController {
         GetMyPosts myPosts = postService.getMyPosts(userDetails);
         return ResponseEntity.ok(myPosts);
     }
+	
+	@GetMapping("/{postId}/applicants")
+	public ResponseEntity<GetMyPostApplicants> getApplicants(
+	    @PathVariable Long postId,
+	    @AuthenticationPrincipal CustomUserDetails userDetails
+	) {
+		GetMyPostApplicants applicants = participationService.getApplicantsByPost(postId, userDetails);
+	    return ResponseEntity.ok(applicants);
+	}
 
 }
