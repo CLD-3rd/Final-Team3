@@ -24,6 +24,7 @@ import com.matchFit.post.dto.response.GetMyPostApplicants;
 import com.matchFit.post.dto.response.GetMyPosts;
 import com.matchFit.post.dto.response.GetPostsCalender;
 import com.matchFit.post.dto.response.GetPostsList;
+import com.matchFit.post.entity.SortType;
 import com.matchFit.post.entity.Sports;
 import com.matchFit.post.service.PostService;
 import com.matchFit.user.entity.Gender;
@@ -84,11 +85,11 @@ public class PostController {
     public ResponseEntity<GetPostsList> getPostsList(
 		@RequestParam(required = false) Sports sports,
         @RequestParam(required = false) Gender gender,
-        @RequestParam(required = false, defaultValue = "false") boolean nearest,
-        @RequestParam(required = true)
+        @RequestParam(required = false, defaultValue = "DATE") SortType sortType,
+        @RequestParam(required = false)
 	    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
     ) {
-        GetPostsList postsList = postService.findByFilters(sports, gender, nearest, date);
+        GetPostsList postsList = postService.findByFilters(sports, gender, sortType, date);
         return ResponseEntity.ok(postsList);
     }
 	
