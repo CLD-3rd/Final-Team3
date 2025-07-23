@@ -17,8 +17,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.matchFit.participation.service.ParticipationService;
 import com.matchFit.post.dto.PostInfoResponseDto;
 import com.matchFit.post.dto.PostRequestDto;
+import com.matchFit.post.dto.response.GetMyPostApplicants;
 import com.matchFit.post.dto.response.GetMyPosts;
 import com.matchFit.post.dto.response.GetPostsCalender;
 import com.matchFit.post.dto.response.GetPostsList;
@@ -39,6 +41,7 @@ public class PostController {
 	
 	private final PostService postService;
 	private final UserService userService;
+	private final ParticipationService participationService;
 	
 	@PostMapping
 	public ResponseEntity<String> createPosts(@RequestBody PostRequestDto dto,
@@ -91,5 +94,14 @@ public class PostController {
         GetMyPosts myPosts = postService.getMyPosts(userDetails);
         return ResponseEntity.ok(myPosts);
     }
+	
+	@GetMapping("/{postId}/applicants")
+	public ResponseEntity<GetMyPostApplicants> getApplicants(
+	    @PathVariable Long postId,
+	    @AuthenticationPrincipal CustomUserDetails userDetails
+	) {
+		GetMyPostApplicants applicants = participationService.getApplicantsByPost(postId, userDetails);
+	    return ResponseEntity.ok(applicants);
+	}
 
 }
