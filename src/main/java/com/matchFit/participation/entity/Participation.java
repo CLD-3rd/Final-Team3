@@ -5,6 +5,8 @@ import com.matchFit.post.entity.Post;
 import com.matchFit.user.entity.User;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -28,6 +30,7 @@ public class Participation extends BaseEntity {
 	private Post post;
 	
 	// 신청 상태의 status, 모집 상태의 status랑 구분
+	@Enumerated(EnumType.STRING)
 	private ApplicationStatus status;
 	
 	private boolean follow;
