@@ -17,7 +17,8 @@ services:
     restart: always
     volumes:
       - redis_insight_volume_data:/db
-    network_mode: "host"
+    ports: 
+      - 5540:5540
 
   mysql:
     image: mysql:8.0
