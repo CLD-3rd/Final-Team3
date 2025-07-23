@@ -1,8 +1,6 @@
 package com.matchFit.post.repository;
 
 
-import org.springframework.stereotype.Repository;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -37,5 +35,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 
     
     List<Post> findAllByDateBetween(LocalDateTime start, LocalDateTime end);
+    
+    List<Post> findByUserIdOrderByCreatedAtDesc(Long userId);
 }
 
