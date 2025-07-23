@@ -1,8 +1,10 @@
 package com.matchFit.post.service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.YearMonth;
+import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -23,12 +25,12 @@ import com.matchFit.post.dto.response.GetPostCalender;
 import com.matchFit.post.dto.response.GetPostsCalender;
 import com.matchFit.post.dto.response.GetPostsList;
 import com.matchFit.post.entity.Post;
+import com.matchFit.post.entity.SortType;
 import com.matchFit.post.entity.Sports;
 import com.matchFit.post.entity.Status;
 import com.matchFit.post.repository.PostRepository;
 import com.matchFit.user.entity.Gender;
 import com.matchFit.user.entity.User;
-import com.matchFit.user.repository.UserRepository;
 import com.matchFit.user.security.CustomUserDetails;
 
 import lombok.RequiredArgsConstructor;
@@ -41,21 +43,35 @@ public class PostService {
 
 	private final ParticipationRepository participationRepository;
     private final PostRepository postRepository;
-    private final UserRepository userRepository;
+//    private final UserRepository userRepository;
 
-    public GetPostsList findByFilters(Sports sports, Gender gender, boolean nearest, LocalDate date) {
-        
-        List<Post> posts = postRepository.findByFilters(
+    public GetPostsList findByFilters(Sports sports, Gender gender, SortType sortType, LocalDate date) {
+    	List<Post> posts = postRepository.findByFilters(
             sports != null ? sports.name() : null, 
             gender != null ? gender.name() : null, 
-            nearest,
             date
         );
+    	
+    	if (sortType == SortType.DATE) {
+           posts = sortPostsByDate(posts, sortType);
+        } else {
+            throw new IllegalArgumentException("Unsupported sort type: " + sortType);
+        }
         
 		List<GetPost> postDtos = GetPost.from(posts);
 
         return GetPostsList.of(postDtos);
     }
+
+	private List<Post> sortPostsByDate(List<Post> posts, SortType sortType) {
+		return posts.stream()
+                .sorted(Comparator.comparing(
+                    p -> Math.abs(
+                        ChronoUnit.SECONDS.between(p.getDate(), LocalDateTime.now())
+                    )
+                ))
+                .collect(Collectors.toList());
+	}
 
 	public GetPostsCalender findByMonth(YearMonth month) {
 		LocalDate startDate = month.atDay(1);
