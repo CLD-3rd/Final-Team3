@@ -31,4 +31,14 @@ public class Participation extends BaseEntity {
 	private ApplicationStatus status;
 	
 	private boolean follow;
+	
+	protected Participation() {}
+	
+	public Participation(User user, Post post) {
+		this.user = user;
+		this.post = post;
+		this.status = ApplicationStatus.PENDING;
+	}
+	
+	
 }

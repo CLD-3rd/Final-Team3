@@ -34,7 +34,7 @@ public class KakaoOAuthController {
     @GetMapping("/api/user/oauth/kakao/callback")
     public String kakaoSignupCallback(@RequestParam String code) {
         try {
-            String email = getKakaoEmail(code, "http://localhost:8083/api/user/oauth/kakao/callback");
+            String email = getKakaoEmail(code, "http://localhost:8080/api/user/oauth/kakao/callback");
             System.out.println("=== 카카오 회원가입 콜백 성공! 이메일: " + email + " ===");
             return "redirect:/signup?kakaoEmail=" + email;
         } catch (Exception e) {
@@ -48,7 +48,7 @@ public class KakaoOAuthController {
     @GetMapping("/api/user/oauth/kakao/login-callback")
     public String kakaoLoginCallback(@RequestParam String code) {
         try {
-            String email = getKakaoEmail(code, "http://localhost:8083/api/user/oauth/kakao/login-callback");
+            String email = getKakaoEmail(code, "http://localhost:8080/api/user/oauth/kakao/login-callback");
             User user = userRepository.findByEmail(email).orElse(null);
 
             if (user != null) {

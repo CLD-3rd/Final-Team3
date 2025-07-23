@@ -11,4 +11,6 @@ public interface ParticipationRepository extends JpaRepository<Participation, Lo
 	// 사용자의 찜 여부 확인
 	boolean existsByPostIdAndUserIdAndFollowTrue(Long postId, Long userId);
 	
+	int countByPost_Id(Long postId);
+	
 }

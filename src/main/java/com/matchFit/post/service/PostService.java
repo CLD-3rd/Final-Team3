@@ -1,15 +1,9 @@
 package com.matchFit.post.service;
 
-
-
-
 import com.matchFit.participation.repository.ParticipationRepository;
 import com.matchFit.post.dto.PostInfoResponseDto;
 import com.matchFit.post.dto.PostRequestDto;
-
-
-
-		
+	
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
@@ -39,8 +33,6 @@ public class PostService {
 
 	private final ParticipationRepository participationRepository;
     private final PostRepository postRepository;
-    
-  
 
     public GetPostsList findByFilters(Sports sports, Gender gender, boolean nearest, LocalDate date) {
         
@@ -100,11 +92,9 @@ public class PostService {
 		int currentParticipantsCount = participationRepository.countByPostId(postId);
 		
 		boolean isBookmarked = false; 
-
 	    if (userId != null) {
 	        isBookmarked = participationRepository.existsByPostIdAndUserIdAndFollowTrue(postId, userId);
-	    }
-		
+	    }	
 		return new PostInfoResponseDto(post, currentParticipantsCount, isBookmarked);
 	}
 }
