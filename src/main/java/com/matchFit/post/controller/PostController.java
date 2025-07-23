@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import com.matchFit.participation.dto.response.MessageResponse;
+import com.matchFit.participation.service.ParticipationService;
 import com.matchFit.post.dto.PostInfoResponseDto;
 import com.matchFit.post.dto.PostRequestDto;
 import com.matchFit.post.service.PostService;
@@ -19,6 +21,7 @@ import com.matchFit.user.service.UserService;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.Collections;
 
 import org.springframework.format.annotation.DateTimeFormat;
 
@@ -34,16 +37,15 @@ import com.matchFit.user.entity.Gender;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-
 @RequestMapping("/api/posts")
-
 @RequiredArgsConstructor
 public class PostController {
 	
 	private final PostService postService;
 	private final UserService userService;
+	private final ParticipationService participationService;
 	
-	@PostMapping("/")
+	@PostMapping("")
 	public ResponseEntity<String> createPosts(@RequestBody PostRequestDto dto) {
 		postService.create(dto);
 		return ResponseEntity.status(HttpStatus.CREATED).body("모집글 생성 성공");		
@@ -65,6 +67,22 @@ public class PostController {
 		return ResponseEntity.ok(dto); 
 	}
 	
+	// 모집 글 신청하기
+	@PostMapping("/{postId}/apply")
+	public ResponseEntity<MessageResponse> applyPost(
+			@PathVariable Long postId,
+			@AuthenticationPrincipal UserDetails userDetails){	
+				
+		String email = userDetails.getUsername();
+        Long userId = userService.findUserIdByEmail(email);
+        
+        try {
+            participationService.applyPost(postId, userId);
+            return ResponseEntity.ok(new MessageResponse("신청이 완료 되었습니다."));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.ok(new MessageResponse("마감되었습니다"));
+        }
+	}
 	
 
 	
