@@ -41,6 +41,8 @@ public class KakaoOAuthController {
     @Value("${kakao.redirect-uri.login}")
     private String kakaoLoginRedirectUri;
     
+
+    
     // 카카오 설정 API
     @GetMapping("/api/kakao-config")
     @ResponseBody
