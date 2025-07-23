@@ -3,16 +3,6 @@ package com.matchFit.post.service;
 
 
 
-import com.matchFit.participation.repository.ParticipationRepository;
-import com.matchFit.post.dto.PostInfoResponseDto;
-import com.matchFit.post.dto.PostRequestDto;
-
-
-
-		
-import jakarta.transaction.Transactional;
-import lombok.RequiredArgsConstructor;
-
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.YearMonth;
@@ -23,6 +13,10 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
+import com.matchFit.participation.repository.ParticipationRepository;
+import com.matchFit.post.dto.PostInfoResponseDto;
+import com.matchFit.post.dto.PostRequestDto;
+import com.matchFit.post.dto.request.EditPostRequestDto;
 import com.matchFit.post.dto.response.GetPost;
 import com.matchFit.post.dto.response.GetPostCalender;
 import com.matchFit.post.dto.response.GetPostsCalender;
@@ -31,6 +25,9 @@ import com.matchFit.post.entity.Post;
 import com.matchFit.post.entity.Sports;
 import com.matchFit.post.repository.PostRepository;
 import com.matchFit.user.entity.Gender;
+
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 
 @Transactional
 @Service
@@ -107,4 +104,32 @@ public class PostService {
 		
 		return new PostInfoResponseDto(post, currentParticipantsCount, isBookmarked);
 	}
+	
+	@Transactional
+	public PostInfoResponseDto editPost(Long postId, EditPostRequestDto dto, Long userId) {
+	    Post post = postRepository.findById(postId)
+	        .orElseThrow(() -> new IllegalArgumentException("해당 게시글이 없습니다."));
+
+	    if (!post.getUser().getId().equals(userId)) {
+	        throw new SecurityException("수정 권한이 없습니다.");
+	    }
+
+	    post.setTitle(dto.getTitle());
+	    post.setDescription(dto.getDescription());
+	    post.setLocation(dto.getLocation());
+	    post.setImageUrl(dto.getImageUrl());
+	    post.setGender(dto.getGender());
+	    post.setSports(dto.getSports());
+	    post.setCost(dto.getCost());
+	    post.setStatus(dto.getStatus());
+	    post.setTown(dto.getTown());
+	    post.setMaxPeople(dto.getMaxPeople());
+	    post.setDate(dto.getDate());
+
+	    int currentParticipantsCount = participationRepository.countByPostId(postId);
+	    boolean isBookmarked = participationRepository.existsByPostIdAndUserIdAndFollowTrue(postId, userId);
+
+	    return new PostInfoResponseDto(post, currentParticipantsCount, isBookmarked);
+	}
+	
 }
