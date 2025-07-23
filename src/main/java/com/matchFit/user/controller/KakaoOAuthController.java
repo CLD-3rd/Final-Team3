@@ -1,10 +1,11 @@
 package com.matchFit.user.controller;
 
-
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -15,6 +16,7 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.client.RestTemplate;
 
 import com.matchFit.user.entity.User;
@@ -30,11 +32,33 @@ public class KakaoOAuthController {
     @Autowired
     private JwtProvider jwtProvider;
     
+    @Value("${kakao.client-id}")
+    private String kakaoClientId;
+    
+    @Value("${kakao.redirect-uri.signup}")
+    private String kakaoSignupRedirectUri;
+    
+    @Value("${kakao.redirect-uri.login}")
+    private String kakaoLoginRedirectUri;
+    
+
+    
+    // 카카오 설정 API
+    @GetMapping("/api/kakao-config")
+    @ResponseBody
+    public Map<String, String> getKakaoConfig() {
+        Map<String, String> config = new HashMap<>();
+        config.put("clientId", kakaoClientId);
+        config.put("signupRedirectUri", kakaoSignupRedirectUri);
+        config.put("loginRedirectUri", kakaoLoginRedirectUri);
+        return config;
+    }
+    
     // 카카오 회원가입용 콜백
     @GetMapping("/api/user/oauth/kakao/callback")
     public String kakaoSignupCallback(@RequestParam String code) {
         try {
-            String email = getKakaoEmail(code, "http://localhost:8083/api/user/oauth/kakao/callback");
+            String email = getKakaoEmail(code, kakaoSignupRedirectUri);
             System.out.println("=== 카카오 회원가입 콜백 성공! 이메일: " + email + " ===");
             return "redirect:/signup?kakaoEmail=" + email;
         } catch (Exception e) {
@@ -44,11 +68,11 @@ public class KakaoOAuthController {
         }
     }
     
-    // 카카오 로그인용 콜백 - JSON 응답으로 개선
+    // 카카오 로그인용 콜백
     @GetMapping("/api/user/oauth/kakao/login-callback")
     public String kakaoLoginCallback(@RequestParam String code) {
         try {
-            String email = getKakaoEmail(code, "http://localhost:8083/api/user/oauth/kakao/login-callback");
+            String email = getKakaoEmail(code, kakaoLoginRedirectUri);
             User user = userRepository.findByEmail(email).orElse(null);
 
             if (user != null) {
@@ -73,7 +97,7 @@ public class KakaoOAuthController {
             // 액세스 토큰 받기
             MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
             params.add("grant_type", "authorization_code");
-            params.add("client_id", "ae217452e8bbfd6450ca5024a003504e");
+            params.add("client_id", kakaoClientId);
             params.add("redirect_uri", redirectUri);
             params.add("code", code);
             
