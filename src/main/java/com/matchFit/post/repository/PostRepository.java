@@ -35,5 +35,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 
     
     List<Post> findAllByDateBetween(LocalDateTime start, LocalDateTime end);
+    
+    List<Post> findByUserIdOrderByCreatedAtDesc(Long userId);
 }
 

@@ -1,38 +1,37 @@
 package com.matchFit.post.controller;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
-
-import com.matchFit.participation.dto.response.MessageResponse;
-import com.matchFit.participation.service.ParticipationService;
-import com.matchFit.post.dto.PostInfoResponseDto;
-import com.matchFit.post.dto.PostRequestDto;
-import com.matchFit.post.service.PostService;
-import com.matchFit.user.service.UserService;
-
 
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.Collections;
 
 import org.springframework.format.annotation.DateTimeFormat;
-
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
+import com.matchFit.participation.dto.response.MessageResponse;
+import com.matchFit.participation.service.ParticipationService;
+import com.matchFit.post.dto.PostInfoResponseDto;
+import com.matchFit.post.dto.PostRequestDto;
+import com.matchFit.post.dto.response.GetMyPostApplicants;
+import com.matchFit.post.dto.response.GetMyPosts;
 import com.matchFit.post.dto.response.GetPostsCalender;
 import com.matchFit.post.dto.response.GetPostsList;
 import com.matchFit.post.entity.Post;
 import com.matchFit.post.entity.Sports;
+import com.matchFit.post.service.PostService;
 import com.matchFit.user.entity.Gender;
-
+import com.matchFit.user.security.CustomUserDetails;
+import com.matchFit.user.service.UserService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -54,6 +53,7 @@ public class PostController {
         Long userId = userService.findUserIdByEmail(email);
 		Post post = postService.create(dto, userId);
 		return ResponseEntity.ok(post);		
+
 	}
 	
 	// 모집글 상세 조회
@@ -109,6 +109,21 @@ public class PostController {
 	    
 		GetPostsCalender postsCalender = postService.findByMonth(month);
 		return ResponseEntity.ok(postsCalender);
+	}
+	
+	@GetMapping("/mine")
+    public ResponseEntity<GetMyPosts> getMyPosts(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        GetMyPosts myPosts = postService.getMyPosts(userDetails);
+        return ResponseEntity.ok(myPosts);
+    }
+	
+	@GetMapping("/{postId}/applicants")
+	public ResponseEntity<GetMyPostApplicants> getApplicants(
+	    @PathVariable Long postId,
+	    @AuthenticationPrincipal CustomUserDetails userDetails
+	) {
+		GetMyPostApplicants applicants = participationService.getApplicantsByPost(postId, userDetails);
+	    return ResponseEntity.ok(applicants);
 	}
 
 }

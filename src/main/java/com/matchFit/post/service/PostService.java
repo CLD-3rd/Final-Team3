@@ -5,7 +5,7 @@ import com.matchFit.participation.repository.ParticipationRepository;
 import com.matchFit.post.dto.PostInfoResponseDto;
 import com.matchFit.post.dto.PostRequestDto;
 	
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 
 import java.time.LocalDate;
@@ -20,6 +20,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
+import com.matchFit.post.dto.response.GetMyPost;
+import com.matchFit.post.dto.response.GetMyPosts;
 import com.matchFit.post.dto.response.GetPost;
 import com.matchFit.post.dto.response.GetPostCalender;
 import com.matchFit.post.dto.response.GetPostsCalender;
@@ -31,6 +33,8 @@ import com.matchFit.post.repository.PostRepository;
 import com.matchFit.user.entity.Gender;
 import com.matchFit.user.entity.User;
 import com.matchFit.user.repository.UserRepository;
+import com.matchFit.user.security.CustomUserDetails;
+
 
 @Transactional
 @Service
@@ -97,10 +101,11 @@ public class PostService {
 	    userRepository.save(user);
 
 	    // 4. Post 생성 및 user 연결
-	    Post post = dto.toEntity();
+	    Post post = dto.toEntity(user);
 	    post.setUser(user);
 		
 		return postRepository.save(post);
+
 	}
 	
 	// 모집 글 상세 조회
@@ -121,4 +126,22 @@ public class PostService {
 	    }	
 		return new PostInfoResponseDto(post, currentParticipantsCount, isBookmarked);
 	}
+	
+	@Transactional(readOnly = true)
+	public GetMyPosts getMyPosts(@AuthenticationPrincipal CustomUserDetails userDetails) {
+		User currentUser = userDetails.getUser();
+	    System.out.println("currentUser = " + currentUser.getId());
+        List<Post> posts = postRepository.findByUserIdOrderByCreatedAtDesc(currentUser.getId());
+        System.out.println("posts = " + posts);
+        List<GetMyPost> myPosts = posts.stream()
+            .map(post -> new GetMyPost(
+                    post.getTitle(),
+                    post.getDate(),
+                    participationRepository.countByPostId(post.getId()),
+                    post.getMaxPeople(),
+                    post.getStatus().name()
+            ))
+            .collect(Collectors.toList());
+        return GetMyPosts.of(myPosts);
+    }
 }
