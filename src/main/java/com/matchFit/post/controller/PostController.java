@@ -73,12 +73,9 @@ public class PostController {
 		String email = userDetails.getUsername();
         Long userId = userService.findUserIdByEmail(email);
         
-        try {
-            participationService.applyPost(postId, userId);
-            return ResponseEntity.ok(new MessageResponse("신청 완료 되었습니다."));
-        } catch (IllegalStateException e) {
-            return ResponseEntity.ok(new MessageResponse("마감되었습니다"));
-        }
+        participationService.applyPost(postId, userId);
+        return ResponseEntity.ok(new MessageResponse("신청 완료 되었습니다."));
+
 	}
 	
 

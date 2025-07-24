@@ -37,6 +37,10 @@ public class ParticipationService {
 		Post post = postRepository.findById(postId)
 				.orElseThrow(() -> new IllegalArgumentException("모집 글이 존재하지 않습니다"));
 		
+		// 이미 신청한 경우
+		if (participationRepository.findByPostIdAndUserId(postId, userId) != null) {
+			throw new IllegalStateException("이미 신청한 모집글입니다");
+		}
 		// 마감 체크
 		int currentPeople = participationRepository.countByPost_IdAndStatus(postId, ApplicationStatus.APPROVED);
 		
