@@ -1,5 +1,10 @@
-package com.matchFit.common.response.dto;
+package com.matchFit.common.dto.response;
 
+import com.matchFit.common.code.SuccessCode;
+
+import lombok.Getter;
+
+@Getter
 public class ApiResponseDTO<T> {
 
     private final String code;
@@ -16,10 +21,11 @@ public class ApiResponseDTO<T> {
         return new ApiResponseDTO<>("SUCCESS", "요청이 정상 처리되었습니다.", data);
     }
 
-    public static <T> ApiResponseDTO<T> onSuccess(String message, T data) {
-        return new ApiResponseDTO<>("SUCCESS", message, data);
+    public static <T> ApiResponseDTO<T> onSuccess(SuccessCode code, T data) {
+        return new ApiResponseDTO<>(code.getCode(), code.getMessage(), data);
     }
 
+    //TODO FaliureCode 생성 후 변
     public static <T> ApiResponseDTO<T> onFailure(String code, String message, T data) {
         return new ApiResponseDTO<>(code, message, data);
     }
@@ -28,16 +34,4 @@ public class ApiResponseDTO<T> {
         return new ApiResponseDTO<>(code, message, null);
     }
 
-    // Getter (Lombok 써도 됨)
-    public String getCode() {
-        return code;
-    }
-
-    public String getMessage() {
-        return message;
-    }
-
-    public T getData() {
-        return data;
-    }
 }
