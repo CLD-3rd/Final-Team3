@@ -20,4 +20,6 @@ public interface ParticipationRepository extends JpaRepository<Participation, Lo
 	
 	List<Participation> findAllByPostId(Long postId);
 
+	Participation findByPostIdAndUserId(Long postId, Long userId);
+
 }
