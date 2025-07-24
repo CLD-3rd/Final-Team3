@@ -3,6 +3,8 @@ package com.matchFit.participation.repository;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.matchFit.participation.entity.ApplicationStatus;
 import com.matchFit.participation.entity.Participation;
@@ -20,6 +22,15 @@ public interface ParticipationRepository extends JpaRepository<Participation, Lo
 	
 	List<Participation> findAllByPostId(Long postId);
 
+
+	// 사용자가 신청한 모집글 조회 
+  @Query("SELECT p FROM Participation p " +
+         "JOIN FETCH p.post post " +
+         "WHERE p.user.id = :userId " +
+         "ORDER BY p.createdAt DESC")
+  List<Participation> findByUserIdWithPost(@Param("userId") Long userId);
+  
+  
 	Participation findByPostIdAndUserId(Long postId, Long userId);
 
 }

@@ -1,11 +1,13 @@
 package com.matchFit.participation.service;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Service;
 
+import com.matchFit.participation.dto.response.GetMyPostsParticipationResponseDto;
 import com.matchFit.participation.entity.ApplicationStatus;
 import com.matchFit.participation.entity.Participation;
 import com.matchFit.participation.repository.ParticipationRepository;
@@ -52,8 +54,8 @@ public class ParticipationService {
 		
 	}
 
-	
-	public GetMyPostApplicants getApplicantsByPost(Long postId, @AuthenticationPrincipal CustomUserDetails userDetails) {
+	// 신청자 목록 조회
+	public GetMyPostApplicants getApplicantsByPost(Long postId, CustomUserDetails userDetails) {
         Post post = postRepository.findById(postId)
             .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 모집글입니다."));
         User currentUser = userDetails.getUser();
@@ -66,5 +68,37 @@ public class ParticipationService {
         List<GetMyPostApplicant> applicantDtos = GetMyPostApplicant.from(applicants);
         
         return GetMyPostApplicants.of(applicantDtos);
+    }
+	
+	
+	// 내가 신청한 글 목록 조회
+    public List<GetMyPostsParticipationResponseDto> GetMyPostsParticipation(Long userId) {
+        List<Participation> participations = participationRepository.findByUserIdWithPost(userId);
+        
+        return participations.stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
+    
+    private GetMyPostsParticipationResponseDto convertToDto(Participation participation) {
+        ApplicationStatus applicationStatus = participation.getStatus();
+        
+        Post post = participation.getPost();
+        String title = post.getTitle();
+        LocalDateTime date = post.getDate();
+        Integer maxPeople = post.getMaxPeople();
+        
+        int currentPeople = participationRepository.countByPost_IdAndStatus(
+                post.getId(), 
+                ApplicationStatus.APPROVED
+        );
+        
+        return new GetMyPostsParticipationResponseDto(
+                title,                              
+                date.toString(),                    
+                currentPeople,                      
+                maxPeople,                          
+                applicationStatus                   
+        );
     }
 }
