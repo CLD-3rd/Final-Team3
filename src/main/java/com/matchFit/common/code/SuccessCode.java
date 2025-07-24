@@ -19,7 +19,8 @@ public enum SuccessCode {
 	POST_GET_MY_APPLIED_POSTS("POST208", "내가 신청한 모집글 리스트를 성공적으로 조회했습니다."),
 	
 	// USER
-    USER_CREATED("USER200", "회원가입이 성공적으로 완료되었습니다.");
+    USER_CREATED("USER200", "회원가입이 성공적으로 완료되었습니다."),
+    USER_LOGIN_SUCCESS("USER201", "로그인에 성공했습니다.");
 	
 	
 	private final String code;
