@@ -80,7 +80,17 @@ public class PostService {
 
 
 	public GetPostsCalender findByMonth(YearMonth month) {
-		LocalDate startDate = month.atDay(1);
+		YearMonth currentMonth = YearMonth.now();
+		if(month.isBefore(currentMonth)) {
+			throw new IllegalArgumentException("과거 달의 게시글은 조회할 수 없습니다.");
+		} 
+		LocalDate startDate;
+		// 이번 달(month)이면 오늘 날짜로, 아니면 해당 달의 1일로 설정
+	    if (YearMonth.from(LocalDate.now()).equals(month)) {
+	        startDate = LocalDate.now();
+	    } else {
+	        startDate = month.atDay(1);
+	    }
         LocalDate endDate = month.atEndOfMonth();
 
         List<Post> posts = postRepository.findAllByDateBetween(startDate.atStartOfDay(), endDate.atTime(LocalTime.MAX));
