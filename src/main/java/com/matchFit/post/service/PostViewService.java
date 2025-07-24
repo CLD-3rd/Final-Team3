@@ -11,8 +11,9 @@ import org.springframework.stereotype.Service;
 @Service
 public class PostViewService {
 	private static final Duration VIEW_TTL = Duration.ofMinutes(1);
-    private static final String VIEW_KEY_FMT = "view:%d:user:%d";
-    private static final String ZSET_KEY     = "post:views";
+	private static final String VIEW_KEY_FMT = "view:post_%d:user_%d";    // view:post:3:user:1
+	private static final String ZSET_KEY     = "views:posts:count";      // views:posts:count
+
 
     private final RedisTemplate<String,String> redis;
 
