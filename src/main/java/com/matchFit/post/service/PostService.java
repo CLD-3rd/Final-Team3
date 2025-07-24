@@ -79,46 +79,21 @@ public class PostService {
     }
 
 
-	public GetPostsCalender findByMonth(YearMonth month) {
-		YearMonth currentMonth = YearMonth.now();
-		if(month.isBefore(currentMonth)) {
-			throw new IllegalArgumentException("과거 달의 게시글은 조회할 수 없습니다.");
-		} 
-		LocalDate startDate;
-		// 이번 달(month)이면 오늘 날짜로, 아니면 해당 달의 1일로 설정
-	    if (YearMonth.from(LocalDate.now()).equals(month)) {
-	        startDate = LocalDate.now();
-	    } else {
-	        startDate = month.atDay(1);
-	    }
-        LocalDate endDate = month.atEndOfMonth();
+    public GetPostsCalender findByMonth(YearMonth month) {
+        validateNotPastMonth(month);
 
-        List<Post> posts = postRepository.findAllByDateBetween(startDate.atStartOfDay(), endDate.atTime(LocalTime.MAX));
-        
-        // 3. 날짜별 → 종목별로 개수 집계
-        Map<LocalDate, Map<Sports, Long>> grouped = posts.stream()
-                .collect(Collectors.groupingBy(
-                    post -> post.getDate().toLocalDate(),
-                    Collectors.groupingBy(Post::getSports, Collectors.counting())
-                ));
-        
-        // 4. DTO(GetPostCalender) 리스트로 변환
-        List<GetPostCalender> calendarEntries = grouped.entrySet().stream()
-            .flatMap(dayEntry ->
-                dayEntry.getValue().entrySet().stream()
-                    .map(sportEntry -> new GetPostCalender(
-                        dayEntry.getKey().toString(),                       // "2025-07-13" 같은 day 문자열
-                        new GetPostCalender.Event(
-                            sportEntry.getKey().getLabel(),           // enum 한글명, ex. "축구"
-                            sportEntry.getValue().intValue()               // 해당 일자·종목 이벤트 개수
-                        )
-                    ))
-            )
-            .sorted(Comparator.comparing(GetPostCalender::getDay))           // day 오름차순 정렬
-            .collect(Collectors.toList());
-        // 5. 전체 결과를 GetPostsCalender로 감싸서 반환
+        LocalDate startDate = determineStartDate(month);
+        LocalDateTime fromDate = startDate.atStartOfDay();
+        LocalDateTime toDate   = month.atEndOfMonth().atTime(LocalTime.MAX);
+
+        List<Post> posts = postRepository.findAllByDateBetween(fromDate, toDate);
+        Map<LocalDate, Map<Sports, Long>> grouped = groupByDateAndSport(posts);
+        List<GetPostCalender> calendarEntries = toCalendarEntries(grouped);
+
         return GetPostsCalender.of(calendarEntries);
-	}
+    }
+
+    
 	
 	// 모집 글 생성
 	public Post create(PostRequestDto dto, @AuthenticationPrincipal CustomUserDetails userDetails) {
@@ -220,4 +195,43 @@ public class PostService {
 	    
 	    return UpdatePostResponseDto.from(updatedPost);
 	}
+	
+	private void validateNotPastMonth(YearMonth month) {
+        YearMonth currentMonth = YearMonth.now();
+        if (month.isBefore(currentMonth)) {
+            throw new IllegalArgumentException("과거 달의 게시글은 조회할 수 없습니다.");
+        }
+    }
+
+    private LocalDate determineStartDate(YearMonth month) {
+        YearMonth current = YearMonth.from(LocalDate.now());
+        if (month.equals(current)) {
+            return LocalDate.now();
+        }
+        return month.atDay(1);
+    }
+
+    private Map<LocalDate, Map<Sports, Long>> groupByDateAndSport(List<Post> posts) {
+        return posts.stream()
+            .collect(Collectors.groupingBy(
+                post -> post.getDate().toLocalDate(),
+                Collectors.groupingBy(Post::getSports, Collectors.counting())
+            ));
+    }
+
+    private List<GetPostCalender> toCalendarEntries(Map<LocalDate, Map<Sports, Long>> grouped) {
+        return grouped.entrySet().stream()
+            .flatMap(dayEntry ->
+                dayEntry.getValue().entrySet().stream()
+                    .map(sportEntry -> new GetPostCalender(
+                        dayEntry.getKey().toString(),
+                        new GetPostCalender.Event(
+                            sportEntry.getKey().getLabel(),
+                            sportEntry.getValue().intValue()
+                        )
+                    ))
+            )
+            .sorted(Comparator.comparing(GetPostCalender::getDay))
+            .collect(Collectors.toList());
+    }
 }
