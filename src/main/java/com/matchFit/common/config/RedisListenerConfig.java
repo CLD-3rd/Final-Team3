@@ -64,7 +64,7 @@ public class RedisListenerConfig {
         private final PostViewService postViewService;
         // view:{postId}:user:{userId} 패턴에서 postId, userId 추출
         private static final Pattern EXPIRED_VIEW_KEY =
-            Pattern.compile("^view:(\\d+):user:(\\d+)$");
+            Pattern.compile("^view:post_(\\d+):user_(\\d+)$");
 
         public ExpiredKeyListener(PostViewService postViewService) {
             this.postViewService = postViewService;
