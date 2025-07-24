@@ -64,10 +64,8 @@ public class PostService {
     	
     	if (sortType == SortType.DATE) {
            posts = sortPostsByDate(posts, sortType);
-           System.out.println("datePosts = " + posts);
     	} else if (sortType == SortType.POPULAR) {
            posts = sortPostsByPopularity(posts, counts);
-           System.out.println("popularPosts = " + posts);
     	} else {
             throw new IllegalArgumentException("Unsupported sort type: " + sortType);
         }
