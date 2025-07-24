@@ -8,8 +8,10 @@ import com.matchFit.post.dto.PostRequestDto;
 import lombok.RequiredArgsConstructor;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.YearMonth;
+import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -20,6 +22,12 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.matchFit.participation.entity.ApplicationStatus;
+import com.matchFit.participation.repository.ParticipationRepository;
+import com.matchFit.post.dto.PostInfoResponseDto;
+import com.matchFit.post.dto.PostRequestDto;
+import com.matchFit.post.dto.UpdatePostRequestDto;
+import com.matchFit.post.dto.UpdatePostResponseDto;
 import com.matchFit.post.dto.response.GetMyPost;
 import com.matchFit.post.dto.response.GetMyPosts;
 import com.matchFit.post.dto.response.GetPost;
@@ -27,12 +35,12 @@ import com.matchFit.post.dto.response.GetPostCalender;
 import com.matchFit.post.dto.response.GetPostsCalender;
 import com.matchFit.post.dto.response.GetPostsList;
 import com.matchFit.post.entity.Post;
+import com.matchFit.post.entity.SortType;
 import com.matchFit.post.entity.Sports;
 import com.matchFit.post.entity.Status;
 import com.matchFit.post.repository.PostRepository;
 import com.matchFit.user.entity.Gender;
 import com.matchFit.user.entity.User;
-import com.matchFit.user.repository.UserRepository;
 import com.matchFit.user.security.CustomUserDetails;
 
 
@@ -44,21 +52,38 @@ public class PostService {
 
 	private final ParticipationRepository participationRepository;
     private final PostRepository postRepository;
-    private final UserRepository userRepository;
+    private final PostViewService postViewService;
 
-    public GetPostsList findByFilters(Sports sports, Gender gender, boolean nearest, LocalDate date) {
-        
-        List<Post> posts = postRepository.findByFilters(
+    public GetPostsList findByFilters(Sports sports, Gender gender, SortType sortType, LocalDate date) {
+    	List<Post> posts = postRepository.findByFilters(
             sports != null ? sports.name() : null, 
             gender != null ? gender.name() : null, 
-            nearest,
             date
         );
+    	
+    	// 1) ID 리스트 수집
+    	List<Long> ids = posts.stream()
+                .map(Post::getId)
+                .collect(Collectors.toList());
+    	
+    	// 2) 조회수 맵 조회
+        Map<Long, Long> counts = postViewService.getViewCounts(ids);
+    	
+    	if (sortType == SortType.DATE) {
+           posts = sortPostsByDate(posts, sortType);
+           System.out.println("datePosts = " + posts);
+    	} else if (sortType == SortType.POPULAR) {
+           posts = sortPostsByPopularity(posts, counts);
+           System.out.println("popularPosts = " + posts);
+    	} else {
+            throw new IllegalArgumentException("Unsupported sort type: " + sortType);
+        }
         
-		List<GetPost> postDtos = GetPost.from(posts);
+		List<GetPost> postDtos = GetPost.from(posts, counts);
 
         return GetPostsList.of(postDtos);
     }
+
 
 	public GetPostsCalender findByMonth(YearMonth month) {
 		LocalDate startDate = month.atDay(1);
@@ -108,6 +133,7 @@ public class PostService {
 			post.setStatus(Status.CLOSED);
 			postRepository.save(post);
 		}
+		postViewService.recordView(postId, userId);
 		
 		boolean isBookmarked = false; 
 	    if (userId != null) {
@@ -133,4 +159,61 @@ public class PostService {
             .collect(Collectors.toList());
         return GetMyPosts.of(myPosts);
     }
+	
+	
+	private List<Post> sortPostsByDate(List<Post> posts, SortType sortType) {
+		return posts.stream()
+                .sorted(Comparator.comparing(
+                    p -> Math.abs(
+                        ChronoUnit.SECONDS.between(p.getDate(), LocalDateTime.now())
+                    )
+                ))
+                .collect(Collectors.toList());
+	}
+	
+	private List<Post> sortPostsByPopularity(List<Post> posts, Map<Long, Long> counts) {
+        // 3) 조회수 내림차순 정렬
+        return posts.stream()
+                    .sorted(Comparator.comparingLong(
+                        p -> counts.getOrDefault(((Post) p).getId(), 0L)
+                    ).reversed())
+                    .collect(Collectors.toList());
+    }
+	
+	
+	@Transactional
+	public UpdatePostResponseDto updatePost(Long postId, UpdatePostRequestDto request, CustomUserDetails userDetails) {
+	    // 게시글 조회
+	    Post post = postRepository.findById(postId)
+	        .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 모집글입니다."));
+	    
+	    // 작성자 권한 확인
+	    User currentUser = userDetails.getUser();
+	    if (!post.getUser().getId().equals(currentUser.getId())) {
+	        throw new IllegalArgumentException("본인이 작성한 글만 수정할 수 있습니다.");
+	    }
+	    
+	    // 날짜 확인
+	    LocalDateTime now = LocalDateTime.now();
+	    if (post.getDate().isBefore(now)) {
+	        throw new IllegalStateException("모임 날짜가 지난 글은 수정할 수 없습니다.");
+	    }
+	    
+	    // 게시글 정보 업데이트 (그대로)
+	    post.setTitle(request.getTitle());
+	    post.setDescription(request.getDescription());
+	    post.setLocation(request.getLocation());
+	    post.setDate(request.getDate());
+	    post.setMaxPeople(request.getMaxPeople());
+	    post.setGender(request.getGender());
+	    post.setStatus(request.getStatus());
+	    post.setCost(request.getCost());
+	    post.setImageUrl(request.getImageUrl());
+	    post.setSports(request.getSports());
+	    post.setTown(request.getTown());
+	    
+	    Post updatedPost = postRepository.save(post);
+	    
+	    return UpdatePostResponseDto.from(updatedPost);
+	}
 }

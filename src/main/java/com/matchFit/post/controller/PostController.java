@@ -12,6 +12,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -21,11 +22,14 @@ import com.matchFit.participation.dto.response.MessageResponse;
 import com.matchFit.participation.service.ParticipationService;
 import com.matchFit.post.dto.PostInfoResponseDto;
 import com.matchFit.post.dto.PostRequestDto;
+import com.matchFit.post.dto.UpdatePostRequestDto;
+import com.matchFit.post.dto.UpdatePostResponseDto;
 import com.matchFit.post.dto.response.GetMyPostApplicants;
 import com.matchFit.post.dto.response.GetMyPosts;
 import com.matchFit.post.dto.response.GetPostsCalender;
 import com.matchFit.post.dto.response.GetPostsList;
 import com.matchFit.post.entity.Post;
+import com.matchFit.post.entity.SortType;
 import com.matchFit.post.entity.Sports;
 import com.matchFit.post.service.PostService;
 import com.matchFit.user.entity.Gender;
@@ -78,12 +82,9 @@ public class PostController {
 		String email = userDetails.getUsername();
         Long userId = userService.findUserIdByEmail(email);
         
-        try {
-            participationService.applyPost(postId, userId);
-            return ResponseEntity.ok(new MessageResponse("신청 완료 되었습니다."));
-        } catch (IllegalStateException e) {
-            return ResponseEntity.ok(new MessageResponse("마감되었습니다"));
-        }
+        participationService.applyPost(postId, userId);
+        return ResponseEntity.ok(new MessageResponse("신청 완료 되었습니다."));
+
 	}
 	
 
@@ -92,11 +93,11 @@ public class PostController {
     public ResponseEntity<GetPostsList> getPostsList(
 		@RequestParam(required = false) Sports sports,
         @RequestParam(required = false) Gender gender,
-        @RequestParam(required = false, defaultValue = "false") boolean nearest,
-        @RequestParam(required = true)
+        @RequestParam(required = false, defaultValue = "DATE") SortType sortType,
+        @RequestParam(required = false)
 	    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
     ) {
-        GetPostsList postsList = postService.findByFilters(sports, gender, nearest, date);
+        GetPostsList postsList = postService.findByFilters(sports, gender, sortType, date);
         return ResponseEntity.ok(postsList);
     }
 	
@@ -121,6 +122,25 @@ public class PostController {
 	) {
 		GetMyPostApplicants applicants = participationService.getApplicantsByPost(postId, userDetails);
 	    return ResponseEntity.ok(applicants);
+	}
+	
+	
+	@PutMapping("/{postId}")
+	public ResponseEntity<?> updatePost(  
+	    @PathVariable Long postId,
+	    @RequestBody UpdatePostRequestDto request,  // 그대로 유지
+	    @AuthenticationPrincipal CustomUserDetails userDetails) {
+	    
+	    try {
+	        UpdatePostResponseDto response = postService.updatePost(postId, request, userDetails);
+	        return ResponseEntity.ok(response);
+	    } catch (IllegalStateException e) {
+	        // 날짜 지난 글 수정 시도
+	        return ResponseEntity.status(400).body(e.getMessage());
+	    } catch (IllegalArgumentException e) {
+	        // 존재하지 않는 글이나 권한 없음  
+	        return ResponseEntity.status(404).body(e.getMessage());
+	    }
 	}
 
 }
