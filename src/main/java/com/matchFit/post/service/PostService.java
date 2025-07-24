@@ -1,8 +1,10 @@
 package com.matchFit.post.service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.YearMonth;
+import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -23,12 +25,12 @@ import com.matchFit.post.dto.response.GetPostCalender;
 import com.matchFit.post.dto.response.GetPostsCalender;
 import com.matchFit.post.dto.response.GetPostsList;
 import com.matchFit.post.entity.Post;
+import com.matchFit.post.entity.SortType;
 import com.matchFit.post.entity.Sports;
 import com.matchFit.post.entity.Status;
 import com.matchFit.post.repository.PostRepository;
 import com.matchFit.user.entity.Gender;
 import com.matchFit.user.entity.User;
-import com.matchFit.user.repository.UserRepository;
 import com.matchFit.user.security.CustomUserDetails;
 
 import lombok.RequiredArgsConstructor;
@@ -41,21 +43,38 @@ public class PostService {
 
 	private final ParticipationRepository participationRepository;
     private final PostRepository postRepository;
-    private final UserRepository userRepository;
+    private final PostViewService postViewService;
 
-    public GetPostsList findByFilters(Sports sports, Gender gender, boolean nearest, LocalDate date) {
-        
-        List<Post> posts = postRepository.findByFilters(
+    public GetPostsList findByFilters(Sports sports, Gender gender, SortType sortType, LocalDate date) {
+    	List<Post> posts = postRepository.findByFilters(
             sports != null ? sports.name() : null, 
             gender != null ? gender.name() : null, 
-            nearest,
             date
         );
+    	
+    	// 1) ID 리스트 수집
+    	List<Long> ids = posts.stream()
+                .map(Post::getId)
+                .collect(Collectors.toList());
+    	
+    	// 2) 조회수 맵 조회
+        Map<Long, Long> counts = postViewService.getViewCounts(ids);
+    	
+    	if (sortType == SortType.DATE) {
+           posts = sortPostsByDate(posts, sortType);
+           System.out.println("datePosts = " + posts);
+    	} else if (sortType == SortType.POPULAR) {
+           posts = sortPostsByPopularity(posts, counts);
+           System.out.println("popularPosts = " + posts);
+    	} else {
+            throw new IllegalArgumentException("Unsupported sort type: " + sortType);
+        }
         
-		List<GetPost> postDtos = GetPost.from(posts);
+		List<GetPost> postDtos = GetPost.from(posts, counts);
 
         return GetPostsList.of(postDtos);
     }
+
 
 	public GetPostsCalender findByMonth(YearMonth month) {
 		LocalDate startDate = month.atDay(1);
@@ -105,6 +124,7 @@ public class PostService {
 			post.setStatus(Status.CLOSED);
 			postRepository.save(post);
 		}
+		postViewService.recordView(postId, userId);
 		
 		boolean isBookmarked = false; 
 	    if (userId != null) {
@@ -129,5 +149,25 @@ public class PostService {
             ))
             .collect(Collectors.toList());
         return GetMyPosts.of(myPosts);
+    }
+	
+	
+	private List<Post> sortPostsByDate(List<Post> posts, SortType sortType) {
+		return posts.stream()
+                .sorted(Comparator.comparing(
+                    p -> Math.abs(
+                        ChronoUnit.SECONDS.between(p.getDate(), LocalDateTime.now())
+                    )
+                ))
+                .collect(Collectors.toList());
+	}
+	
+	private List<Post> sortPostsByPopularity(List<Post> posts, Map<Long, Long> counts) {
+        // 3) 조회수 내림차순 정렬
+        return posts.stream()
+                    .sorted(Comparator.comparingLong(
+                        p -> counts.getOrDefault(((Post) p).getId(), 0L)
+                    ).reversed())
+                    .collect(Collectors.toList());
     }
 }
