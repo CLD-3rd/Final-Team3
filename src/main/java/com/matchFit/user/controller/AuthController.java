@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.ModelAndView;
 
+import com.matchFit.common.code.SuccessCode;
+import com.matchFit.common.dto.response.ApiResponseDTO;
 import com.matchFit.post.entity.Sports;
 import com.matchFit.user.dto.request.SignUpRequest;
 import com.matchFit.user.entity.Gender;
@@ -43,40 +45,51 @@ public class AuthController {
     }
 
     @PostMapping("/signup")
-    public ResponseEntity<?> registerUser(@RequestBody SignUpRequest signUpRequest) {
+    public ResponseEntity<ApiResponseDTO<Void>> registerUser(@RequestBody SignUpRequest signUpRequest) {
+
         // 이메일 중복 확인
         if (userRepository.existsByEmail(signUpRequest.getEmail())) {
-            return ResponseEntity.badRequest().body("이미 사용중인 이메일입니다.");
+            return ResponseEntity
+                    .badRequest()
+                    .body(ApiResponseDTO.onFailure("USER400", "이미 사용중인 이메일입니다.", null));
         }
 
         // 닉네임 중복 확인
         if (userRepository.existsByNickname(signUpRequest.getNickname())) {
-            return ResponseEntity.badRequest().body("이미 사용중인 닉네임입니다.");
+            return ResponseEntity
+                    .badRequest()
+                    .body(ApiResponseDTO.onFailure("USER401", "이미 사용중인 닉네임입니다.", null));
         }
 
         try {
-            // 새 사용자 생성 (String을 enum으로 변환)
+            // 사용자 생성
             User user = new User();
             user.setEmail(signUpRequest.getEmail());
             user.setNickname(signUpRequest.getNickname());
-
             user.setGender(Gender.valueOf(signUpRequest.getGender()));
             user.setSports(Sports.valueOf(signUpRequest.getSports()));
             user.setAge(signUpRequest.getAge());
             user.setTown(signUpRequest.getTown());
 
+            // 비밀번호 설정
             if (signUpRequest.getPassword() == null || signUpRequest.getPassword().isEmpty()) {
-                user.setPassword("KAKAO_LOGIN");  // 카카오 로그인은 비밀번호 없음
+                user.setPassword("KAKAO_LOGIN");
             } else {
                 user.setPassword(passwordEncoder.encode(signUpRequest.getPassword()));
             }
 
             userRepository.save(user);
-            return ResponseEntity.ok("회원가입이 완료되었습니다!");
+
+            return ResponseEntity
+                    .ok(ApiResponseDTO.onSuccess(SuccessCode.USER_CREATED, null));
+
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body("잘못된 성별 또는 스포츠 종목입니다.");
+            return ResponseEntity
+                    .badRequest()
+                    .body(ApiResponseDTO.onFailure("USER402", "잘못된 성별 또는 스포츠 종목입니다.", null));
         }
     }
+
     
 
     // 이메일 중복 확인

@@ -4,7 +4,6 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -17,6 +16,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.matchFit.common.code.SuccessCode;
+import com.matchFit.common.dto.response.ApiResponseDTO;
 import com.matchFit.participation.dto.response.MessageResponse;
 import com.matchFit.participation.service.ParticipationService;
 import com.matchFit.post.dto.PostInfoResponseDto;
@@ -46,15 +47,15 @@ public class PostController {
 	private final ParticipationService participationService;
 	
 	@PostMapping
-	public ResponseEntity<String> createPosts(@RequestBody PostRequestDto dto,
+	public ResponseEntity<ApiResponseDTO<String>> createPosts(@RequestBody PostRequestDto dto,
 			@AuthenticationPrincipal CustomUserDetails userDetails) {
 		postService.create(dto, userDetails);
-		return ResponseEntity.status(HttpStatus.CREATED).body("모집글 생성 성공");		
+		return ResponseEntity.ok(ApiResponseDTO.onSuccess(SuccessCode.POST_CREATED, null));		
 	}
 	
 	// 모집글 상세 조회
 	@GetMapping("/{postId}")
-	public ResponseEntity<PostInfoResponseDto> getPostDetail(
+	public ResponseEntity<ApiResponseDTO<PostInfoResponseDto>> getPostDetail(
 							@PathVariable Long postId,
 							@AuthenticationPrincipal UserDetails userDetails){
 		
@@ -65,12 +66,12 @@ public class PostController {
 	    }
   
 		PostInfoResponseDto dto = postService.searchPost(postId, userId);
-		return ResponseEntity.ok(dto); 
+		return ResponseEntity.ok(ApiResponseDTO.onSuccess(SuccessCode.POST_GET_DETAIL, dto));
 	}
 	
 	// 모집 글 신청하기
 	@PostMapping("/{postId}/apply")
-	public ResponseEntity<MessageResponse> applyPost(
+	public ResponseEntity<ApiResponseDTO<MessageResponse>> applyPost(
 			@PathVariable Long postId,
 			@AuthenticationPrincipal UserDetails userDetails){	
 				
@@ -78,14 +79,13 @@ public class PostController {
         Long userId = userService.findUserIdByEmail(email);
         
         participationService.applyPost(postId, userId);
-        return ResponseEntity.ok(new MessageResponse("신청 완료 되었습니다."));
-
+		return ResponseEntity.ok(ApiResponseDTO.onSuccess(SuccessCode.POST_APPLY, null));
 	}
 	
 
 	
 	@GetMapping("/list")
-    public ResponseEntity<GetPostsList> getPostsList(
+    public ResponseEntity<ApiResponseDTO<GetPostsList>> getPostsList(
 		@RequestParam(required = false) Sports sports,
         @RequestParam(required = false) Gender gender,
         @RequestParam(required = false, defaultValue = "DATE") SortType sortType,
@@ -93,49 +93,43 @@ public class PostController {
 	    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
     ) {
         GetPostsList postsList = postService.findByFilters(sports, gender, sortType, date);
-        return ResponseEntity.ok(postsList);
+        return ResponseEntity.ok(ApiResponseDTO.onSuccess(SuccessCode.POST_GET_LIST, postsList));
     }
 	
 	@GetMapping("/calender")
-	public ResponseEntity<GetPostsCalender> getPostsCalender(
+	public ResponseEntity<ApiResponseDTO<GetPostsCalender>> getPostsCalender(
 			@RequestParam("month") @DateTimeFormat(pattern = "yyyy-MM") YearMonth month) {
 	    
 		GetPostsCalender postsCalender = postService.findByMonth(month);
-		return ResponseEntity.ok(postsCalender);
+		return ResponseEntity.ok(ApiResponseDTO.onSuccess(SuccessCode.POST_GET_CALENDER, postsCalender));
 	}
 	
 	@GetMapping("/mine")
-    public ResponseEntity<GetMyPosts> getMyPosts(@AuthenticationPrincipal CustomUserDetails userDetails) {
+    public ResponseEntity<ApiResponseDTO<GetMyPosts>> getMyPosts(@AuthenticationPrincipal CustomUserDetails userDetails) {
         GetMyPosts myPosts = postService.getMyPosts(userDetails);
-        return ResponseEntity.ok(myPosts);
+        return ResponseEntity.ok(ApiResponseDTO.onSuccess(SuccessCode.POST_GET_MY_POSTS, myPosts));
     }
 	
 	@GetMapping("/{postId}/applicants")
-	public ResponseEntity<GetMyPostApplicants> getApplicants(
+	public ResponseEntity<ApiResponseDTO<GetMyPostApplicants>> getApplicants(
 	    @PathVariable Long postId,
 	    @AuthenticationPrincipal CustomUserDetails userDetails
 	) {
 		GetMyPostApplicants applicants = participationService.getApplicantsByPost(postId, userDetails);
-	    return ResponseEntity.ok(applicants);
+	    return ResponseEntity.ok(ApiResponseDTO.onSuccess(SuccessCode.POST_GET_MY_APPLICANTS, applicants));
 	}
 	
 	
 	@PutMapping("/{postId}")
-	public ResponseEntity<?> updatePost(  
+	public ResponseEntity<ApiResponseDTO<UpdatePostResponseDto>> updatePost(  
 	    @PathVariable Long postId,
 	    @RequestBody UpdatePostRequestDto request,  // 그대로 유지
 	    @AuthenticationPrincipal CustomUserDetails userDetails) {
 	    
-	    try {
-	        UpdatePostResponseDto response = postService.updatePost(postId, request, userDetails);
-	        return ResponseEntity.ok(response);
-	    } catch (IllegalStateException e) {
-	        // 날짜 지난 글 수정 시도
-	        return ResponseEntity.status(400).body(e.getMessage());
-	    } catch (IllegalArgumentException e) {
-	        // 존재하지 않는 글이나 권한 없음  
-	        return ResponseEntity.status(404).body(e.getMessage());
-	    }
+
+        UpdatePostResponseDto response = postService.updatePost(postId, request, userDetails);
+        return ResponseEntity.ok(ApiResponseDTO.onSuccess(SuccessCode.POST_UPDATED, response));
+	    
 	}
 
 }
