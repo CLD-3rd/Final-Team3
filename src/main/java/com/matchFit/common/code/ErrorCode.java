@@ -13,6 +13,9 @@ public enum ErrorCode {
 	POST_UNAUTHORIZED_USER("POST400", "게시글 작성 권한이 없습니다.", HttpStatus.UNAUTHORIZED),
 	POST_PAST_EVENT_MODIFICATION("POST401", "과거 날짜에 게시글을 작성할 수 없습니다.", HttpStatus.BAD_REQUEST),
 	POST_NOT_FOUND("POST402", "존재하지 않는 게시글입니다.", HttpStatus.NOT_FOUND),
+	INVALID_SORTING_TYPE("POST403", "유효하지 않은 정렬 타입입니다.", HttpStatus.BAD_REQUEST),
+	POST_PAST_DAYS("POST404", "과거 날짜에 게시글을 조회할 수 없습니다.", HttpStatus.BAD_REQUEST),
+	POST_PAST_MONTHS("POST405", "과거 달에 게시글을 조회할 수 없습니다.", HttpStatus.BAD_REQUEST),
 	
 	
 	// USER
