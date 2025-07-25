@@ -52,8 +52,10 @@ public class PostService {
 
     public GetPostsList findByFilters(Sports sports, Gender gender, SortType sortType, LocalDate date) {
     	// 이전 날짜값이 들어오면 예외 처리
-    	validateNotPastDate(date);
-    	
+    	if (date != null) {
+    	    validateNotPastDate(date);
+    	}
+
     	List<Post> posts = postRepository.findByFilters(
             sports != null ? sports.name() : null, 
             gender != null ? gender.name() : null, 
