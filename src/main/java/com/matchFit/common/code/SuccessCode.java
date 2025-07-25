@@ -22,8 +22,9 @@ public enum SuccessCode {
     USER_CREATED("USER200", "회원가입이 성공적으로 완료되었습니다."),
     USER_LOGIN_SUCCESS("USER201", "로그인에 성공했습니다."), 
     USER_EMAIL_AVAILABLE("USER202", "사용 가능한 이메일입니다."),
-    USER_NICKNAME_AVAILABLE("USER203", "사용 가능한 닉네임입니다.");
-	
+    USER_NICKNAME_AVAILABLE("USER203", "사용 가능한 닉네임입니다."),
+    USER_GET_MY_PROFILE("USER204", "사용자 프로필 정보를 성공적으로 조회했습니다."),
+	USER_EDIT_MY_PROFILE("USER205", "사용자 프로필 정보가 성공적으로 수정되었습니다.");	
 	
 	private final String code;
 	private final String message;
