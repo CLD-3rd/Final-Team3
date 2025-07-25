@@ -84,9 +84,12 @@ public class ParticipationService {
         ApplicationStatus applicationStatus = participation.getStatus();
         
         Post post = participation.getPost();
+        Long postId = post.getId();           
         String title = post.getTitle();
         LocalDateTime date = post.getDate();
         Integer maxPeople = post.getMaxPeople();
+        String location = post.getLocation(); 
+        Integer cost = post.getCost();       
         
         int currentPeople = participationRepository.countByPost_IdAndStatus(
                 post.getId(), 
@@ -94,10 +97,13 @@ public class ParticipationService {
         );
         
         return new GetMyPostsParticipationResponseDto(
+                postId,                         
                 title,                              
                 date.toString(),                    
                 currentPeople,                      
-                maxPeople,                          
+                maxPeople,
+                location,                       
+                cost,                        
                 applicationStatus                   
         );
     }
