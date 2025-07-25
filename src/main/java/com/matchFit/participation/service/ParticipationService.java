@@ -6,7 +6,10 @@ import java.util.stream.Collectors;
 
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import com.matchFit.participation.dto.request.ManageApplicant;
+import com.matchFit.participation.dto.request.ManageApplicant.Decision;
 import com.matchFit.participation.dto.response.GetMyPostsParticipationResponseDto;
 import com.matchFit.participation.entity.ApplicationStatus;
 import com.matchFit.participation.entity.Participation;
@@ -14,6 +17,8 @@ import com.matchFit.participation.repository.ParticipationRepository;
 import com.matchFit.post.dto.response.GetMyPostApplicant;
 import com.matchFit.post.dto.response.GetMyPostApplicants;
 import com.matchFit.post.entity.Post;
+import com.matchFit.post.exception.PostNotFoundException;
+import com.matchFit.post.exception.UnauthorizedUserException;
 import com.matchFit.post.repository.PostRepository;
 import com.matchFit.user.entity.User;
 import com.matchFit.user.repository.UserRepository;
@@ -101,4 +106,23 @@ public class ParticipationService {
                 applicationStatus                   
         );
     }
+
+    @Transactional
+	public void manageApplicant(Long postId, ManageApplicant dto, CustomUserDetails userDetails) {
+		Post post = postRepository.findById(postId).orElseThrow(
+				() -> new PostNotFoundException());
+
+		User currentUser = userDetails.getUser();
+
+		if (!post.getUser().getId().equals(currentUser.getId())) {
+			throw new UnauthorizedUserException();
+		}
+
+        Participation participation = participationRepository
+            .findByPostIdAndUserId(postId, dto.getApplicantId());
+
+        participation.setStatus(dto.getDecision() == Decision.ACCEPT
+                ? ApplicationStatus.APPROVED
+                : ApplicationStatus.REJECTED);
+	}
 }
