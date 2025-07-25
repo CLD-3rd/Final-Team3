@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.matchFit.participation.dto.request.ManageApplicant;
 import com.matchFit.participation.dto.request.ManageApplicant.Decision;
+import com.matchFit.participation.dto.response.DecisionApplicant;
 import com.matchFit.participation.dto.response.GetMyPostsParticipationResponseDto;
 import com.matchFit.participation.entity.ApplicationStatus;
 import com.matchFit.participation.entity.Participation;
@@ -108,7 +109,7 @@ public class ParticipationService {
     }
 
     @Transactional
-	public void manageApplicant(Long postId, ManageApplicant dto, CustomUserDetails userDetails) {
+	public DecisionApplicant manageApplicant(Long postId, ManageApplicant dto, CustomUserDetails userDetails) {
 		Post post = postRepository.findById(postId).orElseThrow(
 				() -> new PostNotFoundException());
 
@@ -124,5 +125,11 @@ public class ParticipationService {
         participation.setStatus(dto.getDecision() == Decision.ACCEPT
                 ? ApplicationStatus.APPROVED
                 : ApplicationStatus.REJECTED);
+        
+		return new DecisionApplicant(
+				participation.getUser().getId(),
+				participation.getUser().getNickname(),
+				participation.getStatus());
+        
 	}
 }

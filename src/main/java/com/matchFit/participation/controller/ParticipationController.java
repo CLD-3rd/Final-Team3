@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.matchFit.common.code.SuccessCode;
 import com.matchFit.common.dto.response.ApiResponseDTO;
 import com.matchFit.participation.dto.request.ManageApplicant;
+import com.matchFit.participation.dto.response.DecisionApplicant;
 import com.matchFit.participation.dto.response.GetMyPostsParticipationResponseDto;
 import com.matchFit.participation.service.ParticipationService;
 import com.matchFit.user.security.CustomUserDetails;
@@ -40,11 +41,11 @@ public class ParticipationController {
     }
     
     @PatchMapping("/{postId}/apply")
-	public ResponseEntity<ApiResponseDTO<Void>> manageApplicant(@PathVariable Long postId,
+	public ResponseEntity<ApiResponseDTO<DecisionApplicant>> manageApplicant(@PathVariable Long postId,
 			@RequestBody ManageApplicant dto, 
 			@AuthenticationPrincipal CustomUserDetails userDetails) {
 
-		participationService.manageApplicant(postId, dto, userDetails);
-		return ResponseEntity.ok(ApiResponseDTO.onSuccess(SuccessCode.PARTICIPATION_MANAGED, null));
+		DecisionApplicant response = participationService.manageApplicant(postId, dto, userDetails);
+		return ResponseEntity.ok(ApiResponseDTO.onSuccess(SuccessCode.PARTICIPATION_MANAGED, response));
 	}
 }
