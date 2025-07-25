@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.matchFit.common.code.SuccessCode;
+import com.matchFit.common.dto.response.ApiResponseDTO;
 import com.matchFit.user.dto.request.EditMyPageRequest;
 import com.matchFit.user.dto.response.MyPageResponse;
 import com.matchFit.user.security.CustomUserDetails;
@@ -22,20 +24,20 @@ public class MyPageController {
     private final MyPageService myPageService;
 
     @GetMapping
-    public ResponseEntity<MyPageResponse> getMyPage(@AuthenticationPrincipal CustomUserDetails userDetails) {
+    public ResponseEntity<ApiResponseDTO<MyPageResponse>> getMyPage(@AuthenticationPrincipal CustomUserDetails userDetails) {
         String email = userDetails.getUsername(); 
         MyPageResponse response = myPageService.getMyPage(email);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(ApiResponseDTO.onSuccess(SuccessCode.USER_GET_MY_PROFILE, response));
     }
 
     @PutMapping
-    public ResponseEntity<MyPageResponse> editMyPage(
+    public ResponseEntity<ApiResponseDTO<MyPageResponse>> editMyPage(
         @AuthenticationPrincipal CustomUserDetails userDetails,
         @RequestBody EditMyPageRequest request) {
         
         String email = userDetails.getUsername();
         MyPageResponse response = myPageService.editMyPage(email, request);
-        return ResponseEntity.ok(response);  
+        return ResponseEntity.ok(ApiResponseDTO.onSuccess(SuccessCode.USER_EDIT_MY_PROFILE, response));  
     }
 
 }

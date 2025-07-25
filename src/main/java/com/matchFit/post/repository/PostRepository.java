@@ -18,7 +18,14 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 	          FROM post p
 	         WHERE (:sports IS NULL OR p.sports = :sports)
 	           AND (:gender IS NULL OR p.gender = :gender)
-	           AND (:date IS NULL OR DATE(p.date) = :date)
+	           AND (
+				     :date IS NULL
+				     AND p.date > NOW()
+				   OR :date IS NOT NULL
+				     AND p.date >= :date
+				     AND p.date <  :date + INTERVAL '1' DAY
+				)
+	        ORDER BY p.date ASC
 	        """,
 	        nativeQuery = true)
 	    List<Post> findByFilters(
