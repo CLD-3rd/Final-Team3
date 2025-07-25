@@ -1,6 +1,6 @@
 package com.matchFit.participation.entity;
 
-import com.matchFit.common.BaseEntity;
+import com.matchFit.common.entity.BaseEntity;
 import com.matchFit.post.entity.Post;
 import com.matchFit.user.entity.User;
 

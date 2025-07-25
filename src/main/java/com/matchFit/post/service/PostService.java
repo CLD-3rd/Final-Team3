@@ -30,6 +30,9 @@ import com.matchFit.post.entity.Post;
 import com.matchFit.post.entity.SortType;
 import com.matchFit.post.entity.Sports;
 import com.matchFit.post.entity.Status;
+import com.matchFit.post.exception.PastEventModificationException;
+import com.matchFit.post.exception.PostNotFoundException;
+import com.matchFit.post.exception.UnauthorizedUserException;
 import com.matchFit.post.repository.PostRepository;
 import com.matchFit.user.entity.Gender;
 import com.matchFit.user.entity.User;
@@ -64,10 +67,8 @@ public class PostService {
     	
     	if (sortType == SortType.DATE) {
            posts = sortPostsByDate(posts, sortType);
-           System.out.println("datePosts = " + posts);
     	} else if (sortType == SortType.POPULAR) {
            posts = sortPostsByPopularity(posts, counts);
-           System.out.println("popularPosts = " + posts);
     	} else {
             throw new IllegalArgumentException("Unsupported sort type: " + sortType);
         }
@@ -118,7 +119,7 @@ public class PostService {
 	// 모집 글 상세 조회
 	public PostInfoResponseDto searchPost(Long postId, Long userId) {
 		Post post = postRepository.findById(postId)
-				.orElseThrow(()-> new IllegalArgumentException("해당 게시글이 없습니다."));
+				.orElseThrow(()-> new PostNotFoundException());
 
 		int currentParticipantsCount = participationRepository.countByPost_IdAndStatus(postId, ApplicationStatus.APPROVED);
 		
@@ -178,18 +179,18 @@ public class PostService {
 	public UpdatePostResponseDto updatePost(Long postId, UpdatePostRequestDto request, CustomUserDetails userDetails) {
 	    // 게시글 조회
 	    Post post = postRepository.findById(postId)
-	        .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 모집글입니다."));
+	        .orElseThrow(() -> new PostNotFoundException());
 	    
 	    // 작성자 권한 확인
 	    User currentUser = userDetails.getUser();
 	    if (!post.getUser().getId().equals(currentUser.getId())) {
-	        throw new IllegalArgumentException("본인이 작성한 글만 수정할 수 있습니다.");
+	        throw new UnauthorizedUserException();
 	    }
 	    
 	    // 날짜 확인
 	    LocalDateTime now = LocalDateTime.now();
 	    if (post.getDate().isBefore(now)) {
-	        throw new IllegalStateException("모임 날짜가 지난 글은 수정할 수 없습니다.");
+	        throw new PastEventModificationException();
 	    }
 	    
 	    // 게시글 정보 업데이트 (그대로)
