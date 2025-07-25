@@ -30,7 +30,10 @@ import com.matchFit.post.entity.Post;
 import com.matchFit.post.entity.SortType;
 import com.matchFit.post.entity.Sports;
 import com.matchFit.post.entity.Status;
+import com.matchFit.post.exception.InvalidSortingTypeException;
+import com.matchFit.post.exception.PastDayException;
 import com.matchFit.post.exception.PastEventModificationException;
+import com.matchFit.post.exception.PastMonthException;
 import com.matchFit.post.exception.PostNotFoundException;
 import com.matchFit.post.exception.UnauthorizedUserException;
 import com.matchFit.post.repository.PostRepository;
@@ -75,7 +78,7 @@ public class PostService {
     	} else if (sortType == SortType.POPULAR) {
            posts = sortPostsByPopularity(posts, counts);
     	} else {
-            throw new IllegalArgumentException("Unsupported sort type: " + sortType);
+            throw new InvalidSortingTypeException();
         }
         
 		List<GetPost> postDtos = GetPost.from(posts, counts);
@@ -204,14 +207,14 @@ public class PostService {
 	private void validateNotPastMonth(YearMonth month) {
         YearMonth currentMonth = YearMonth.now();
         if (month.isBefore(currentMonth)) {
-            throw new IllegalArgumentException("과거 달의 게시글은 조회할 수 없습니다.");
+            throw new PastMonthException();
         }
     }
 	
 	private void validateNotPastDate(LocalDate date) {
 		LocalDate today = LocalDate.now();
 	    if (date.isBefore(today)) {
-	        throw new IllegalArgumentException("과거 날짜의 게시글은 조회할 수 없습니다.");
+	        throw new PastDayException();
 	    }
 		
 	}
