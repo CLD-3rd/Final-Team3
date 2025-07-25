@@ -5,11 +5,16 @@ import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.matchFit.common.code.SuccessCode;
 import com.matchFit.common.dto.response.ApiResponseDTO;
+import com.matchFit.participation.dto.request.ManageApplicant;
+import com.matchFit.participation.dto.response.DecisionApplicant;
 import com.matchFit.participation.dto.response.GetMyPostsParticipationResponseDto;
 import com.matchFit.participation.service.ParticipationService;
 import com.matchFit.user.security.CustomUserDetails;
@@ -34,4 +39,13 @@ public class ParticipationController {
         
         return ResponseEntity.ok(ApiResponseDTO.onSuccess(SuccessCode.POST_GET_MY_APPLIED_POSTS, myApplications));
     }
+    
+    @PatchMapping("/{postId}/apply")
+	public ResponseEntity<ApiResponseDTO<DecisionApplicant>> manageApplicant(@PathVariable Long postId,
+			@RequestBody ManageApplicant dto, 
+			@AuthenticationPrincipal CustomUserDetails userDetails) {
+
+		DecisionApplicant response = participationService.manageApplicant(postId, dto, userDetails);
+		return ResponseEntity.ok(ApiResponseDTO.onSuccess(SuccessCode.PARTICIPATION_MANAGED, response));
+	}
 }
