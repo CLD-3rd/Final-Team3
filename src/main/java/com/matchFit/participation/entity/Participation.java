@@ -45,5 +45,8 @@ public class Participation extends BaseEntity {
 		this.status = ApplicationStatus.PENDING;
 	}
 	
+	public void setStatus(ApplicationStatus status) {
+        this.status = status;
+    }
 	
 }
