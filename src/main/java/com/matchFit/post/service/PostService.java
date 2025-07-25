@@ -51,6 +51,9 @@ public class PostService {
     private final PostViewService postViewService;
 
     public GetPostsList findByFilters(Sports sports, Gender gender, SortType sortType, LocalDate date) {
+    	// 이전 날짜값이 들어오면 예외 처리
+    	validateNotPastDate(date);
+    	
     	List<Post> posts = postRepository.findByFilters(
             sports != null ? sports.name() : null, 
             gender != null ? gender.name() : null, 
@@ -202,6 +205,14 @@ public class PostService {
             throw new IllegalArgumentException("과거 달의 게시글은 조회할 수 없습니다.");
         }
     }
+	
+	private void validateNotPastDate(LocalDate date) {
+		LocalDate today = LocalDate.now();
+	    if (date.isBefore(today)) {
+	        throw new IllegalArgumentException("과거 날짜의 게시글은 조회할 수 없습니다.");
+	    }
+		
+	}
 
     private LocalDate determineStartDate(YearMonth month) {
         YearMonth current = YearMonth.from(LocalDate.now());
