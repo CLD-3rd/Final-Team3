@@ -1,6 +1,6 @@
 package com.matchFit.user.entity;
 
-import com.matchFit.common.BaseEntity;
+import com.matchFit.common.entity.BaseEntity;
 import com.matchFit.post.entity.Sports;
 
 import jakarta.persistence.Column;

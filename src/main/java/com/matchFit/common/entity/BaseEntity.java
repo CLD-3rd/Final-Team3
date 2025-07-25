@@ -1,4 +1,4 @@
-package com.matchFit.common;
+package com.matchFit.common.entity;
 
 import java.time.LocalDateTime;
 

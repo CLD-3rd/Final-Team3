@@ -14,13 +14,4 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addViewController("/signup").setViewName("forward:/signup.html");
 
     }
-    
-    @Override
-    public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/**")
-            .allowedOrigins("http://localhost:3000") // 프론트엔드 개발 주소
-            .allowedMethods("*")
-            .allowedHeaders("*")
-            .allowCredentials(true); // 쿠키 등 인증정보 허용할 때만 true
-    }
 }

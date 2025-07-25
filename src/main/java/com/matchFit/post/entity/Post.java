@@ -2,7 +2,7 @@ package com.matchFit.post.entity;
 
 import java.time.LocalDateTime;
 
-import com.matchFit.common.BaseEntity;
+import com.matchFit.common.entity.BaseEntity;
 import com.matchFit.user.entity.Gender;
 import com.matchFit.user.entity.User;
 import com.matchFit.post.entity.Status;
