@@ -137,6 +137,7 @@ public class PostService {
         System.out.println("posts = " + posts);
         List<GetMyPost> myPosts = posts.stream()
             .map(post -> new GetMyPost(
+            		post.getId(), 
                     post.getTitle(),
                     post.getDate(),
                     participationRepository.countByPost_IdAndStatus(post.getId(),ApplicationStatus.APPROVED),
