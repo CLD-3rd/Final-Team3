@@ -139,7 +139,7 @@ public class PostService {
             .map(post -> new GetMyPost(
                     post.getTitle(),
                     post.getDate(),
-                    participationRepository.countByPostId(post.getId()),
+                    participationRepository.countByPost_IdAndStatus(post.getId(),ApplicationStatus.APPROVED),
                     post.getMaxPeople(),
                     post.getStatus().name()
             ))
