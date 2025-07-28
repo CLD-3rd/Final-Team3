@@ -89,7 +89,7 @@ jobs:
         with:
           repository: CLD-3rd/Final-Team3-manifests
           token: ${{ secrets.GH_TOKEN }}
-          ref: develop
+          ref: feat/app
           path: manifest
 
       - name: Install kustomize
