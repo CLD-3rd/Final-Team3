@@ -138,7 +138,6 @@ public class PostController {
 
         UpdatePostResponseDto response = postService.updatePost(postId, request, userDetails);
         return ResponseEntity.ok(ApiResponseDTO.onSuccess(SuccessCode.POST_UPDATED, response));
-	    
 	}
 
 }
