@@ -77,34 +77,49 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.REPO }}:${{ env.SHORT_SHA }}
             ${{ env.REGISTRY }}/${{ env.REPO }}:latest
 
-#   cd:
-#     runs-on: ubuntu-latest
-#     needs: ci
-#     env:
-#       SHORT_SHA: ${{ needs.ci.outputs.short_sha }}
-#
-#     steps:
-#       - name: Checkout manifest repository
-#         uses: actions/checkout@v4
-#         with:
-#           repository: CLD-3rd/Final-Team3-manifests
-#           token: ${{ secrets.GH_TOKEN }}
-#           ref: develop
-#           path: manifest
-#
-#       - name: Install kustomize
-#         uses: imranismail/setup-kustomize@v2
-#
-#       - name: Update image tag in kustomization.yaml
-#         run: |
-#           cd manifest/overlays/dev
-#           kustomize edit set image ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DOCKERHUB_REPOSITORY }}=${{ env.SHORT_SHA }}
-#
-#       - name: Commit and push changes
-#         run: |
-#           cd manifest
-#           git config --global user.name "github-actions[bot]"
-#           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-#           git add .
-#           git commit -m "Update image tag to ${{ env.SHORT_SHA }}" || echo "No changes to commit"
-#           git push origin develop
+  cd:
+    runs-on: ubuntu-latest
+    needs: ci
+    env:
+      SHORT_SHA: ${{ needs.ci.outputs.short_sha }}
+
+    steps:
+      - name: Checkout manifest repository
+        uses: actions/checkout@v4
+        with:
+          repository: CLD-3rd/Final-Team3-manifests
+          token: ${{ secrets.GH_TOKEN }}
+          ref: develop
+          path: manifest
+
+      - name: Install kustomize
+        uses: imranismail/setup-kustomize@v2
+
+      - name: Update image tag in kustomization.yaml
+        run: |
+          cd manifest/overlays/dev
+          kustomize edit set image ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DOCKERHUB_REPOSITORY }}=${{ env.SHORT_SHA }}
+
+      - name: Commit and push changes
+        run: |
+          cd manifest
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "Update image tag to ${{ env.SHORT_SHA }}" || echo "No changes to commit"
+          git push origin develop
+
+      - name: Set up kubeconfig
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          region: ap-northeast-2
+
+      - name: Update kubeconfig for EKS
+        run: aws eks update-kubeconfig --name matchfit-eks --region ap-northeast-2
+
+      - name: Deploy to EKS with kubectl
+        run: |
+          cd manifest/overlays/dev
+          kubectl apply -k .
