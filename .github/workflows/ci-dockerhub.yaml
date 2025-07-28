@@ -1,9 +1,6 @@
 name: CI - Build and Deploy via ArgoCD
 
 on:
-  push:
-    branches:
-      - develop
   workflow_dispatch:
 
 env:
