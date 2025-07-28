@@ -12,7 +12,6 @@ import com.matchFit.participation.entity.Participation;
 public interface ParticipationRepository extends JpaRepository<Participation, Long> {
 	// 현재 신청자 수 계산
 	int countByPostId(Long postId);
-	
 
 	// 신청 승인된 사용자만 count
 	int countByPost_IdAndStatus(Long postId, ApplicationStatus status);
