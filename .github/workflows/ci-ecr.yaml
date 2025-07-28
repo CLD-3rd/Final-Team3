@@ -1,0 +1,133 @@
+name: CI - Build and Deploy via ArgoCD
+
+on:
+  workflow_dispatch:
+
+env:
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  REGISTRY: ${{ secrets.REGISTRY }}
+  REPO: ${{ secrets.REPO }}
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    outputs:
+      short_sha: ${{ steps.export-sha.outputs.short_sha }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+          
+      - name: Cache Maven Dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.m2/repository
+          key: maven-cache-${{ runner.os }}-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            maven-cache-${{ runner.os }}-
+
+      - name: Create application.properties
+        run: |
+          mkdir -p ./src/main/resources
+          touch ./src/main/resources/application.properties
+          echo "${{ secrets.PROPERTIES }}" > ./src/main/resources/application.properties
+#           echo "${{ secrets.PROPERTIES }}" | base64 --decode > ./src/main/resources/application.properties
+        shell: bash
+
+      - name: Build with Maven
+        run: mvn -B -DskipTests package --file pom.xml
+
+      - name: Rename jar
+        run: mv ./target/*.jar ./target/app.jar
+        
+      - name: Check jar file
+        run: ls ./target
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Log in to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Set SHORT_SHA env
+        id: export-sha
+        run: |
+          echo "short_sha=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+          echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.REPO }}:${{ env.SHORT_SHA }}
+            ${{ env.REGISTRY }}/${{ env.REPO }}:latest
+
+  cd:
+    runs-on: ubuntu-latest
+    needs: ci
+    env:
+      SHORT_SHA: ${{ needs.ci.outputs.short_sha }}
+      REGISTRY: ${{ secrets.REGISTRY }}
+      REPO: ${{ secrets.REPO }}
+
+    steps:
+      - name: Checkout manifest repository
+        uses: actions/checkout@v4
+        with:
+          repository: CLD-3rd/Final-Team3-manifests
+          token: ${{ secrets.GH_TOKEN }}
+          ref: develop
+          path: manifest
+
+      - name: Install kustomize
+        uses: imranismail/setup-kustomize@v2
+
+      - name: Update image tag in kustomization.yaml
+        run: |
+          cd manifest/overlays/dev
+          kustomize edit set image ${{ env.REGISTRY }}/${{ env.REPO }}=${{ env.SHORT_SHA }}
+
+      - name: Commit and push changes
+        run: |
+          cd manifest
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "Update image tag to ${{ env.SHORT_SHA }}" || echo "No changes to commit"
+          git push origin develop
+
+      ## argoCD없이 배포 (추후에 필요없어짐)
+      - name: Set up kubeconfig
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          region: ap-northeast-2
+
+      - name: Update kubeconfig for EKS
+        run: aws eks update-kubeconfig --name your-eks-cluster-name --region ap-northeast-2
+
+      - name: Deploy to EKS with kubectl
+        run: |
+          cd manifest/overlays/dev
+          kubectl apply -k .

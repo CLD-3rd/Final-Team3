@@ -141,7 +141,9 @@ public class PostService {
             		post.getId(), 
                     post.getTitle(),
                     post.getDate(),
-                    participationRepository.countByPost_IdAndStatus(post.getId(),ApplicationStatus.APPROVED),                    post.getMaxPeople(),
+                    participationRepository.countByPost_IdAndStatus(post.getId(),ApplicationStatus.APPROVED),
+                    post.getMaxPeople(),
+
                     post.getStatus().name()
             ))
             .collect(Collectors.toList());
