@@ -27,7 +27,9 @@ public class GetPost {
     private String gender;
     private Long viewCount; // 게시글 조회수
 
+
 	public static List<GetPost> from(List<Post> posts, Map<Long, Long> viewCounts, Map<Long, Integer> currentPeopleMap) {
+
 		return posts.stream()
 	            .map(post -> new GetPost(
 	            	post.getId(),

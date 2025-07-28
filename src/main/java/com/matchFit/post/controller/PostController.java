@@ -2,6 +2,7 @@ package com.matchFit.post.controller;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.Collections;
 
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -28,6 +29,7 @@ import com.matchFit.post.dto.response.GetMyPostApplicants;
 import com.matchFit.post.dto.response.GetMyPosts;
 import com.matchFit.post.dto.response.GetPostsCalender;
 import com.matchFit.post.dto.response.GetPostsList;
+import com.matchFit.post.entity.Post;
 import com.matchFit.post.entity.SortType;
 import com.matchFit.post.entity.Sports;
 import com.matchFit.post.service.PostService;
@@ -46,11 +48,18 @@ public class PostController {
 	private final UserService userService;
 	private final ParticipationService participationService;
 	
+
+	// 모집글 생성
 	@PostMapping
 	public ResponseEntity<ApiResponseDTO<String>> createPosts(@RequestBody PostRequestDto dto,
 			@AuthenticationPrincipal CustomUserDetails userDetails) {
 		postService.create(dto, userDetails);
+
+		//return ResponseEntity.status(HttpStatus.CREATED).body("모집글 생성 성공");		
+
+
 		return ResponseEntity.ok(ApiResponseDTO.onSuccess(SuccessCode.POST_CREATED, null));		
+
 	}
 	
 	// 모집글 상세 조회

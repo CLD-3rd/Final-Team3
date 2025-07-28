@@ -1,5 +1,12 @@
 package com.matchFit.post.service;
 
+import com.matchFit.participation.entity.ApplicationStatus;
+import com.matchFit.participation.repository.ParticipationRepository;
+import com.matchFit.post.dto.PostInfoResponseDto;
+import com.matchFit.post.dto.PostRequestDto;
+	
+import lombok.RequiredArgsConstructor;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -12,6 +19,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,7 +51,6 @@ import com.matchFit.user.entity.Gender;
 import com.matchFit.user.entity.User;
 import com.matchFit.user.security.CustomUserDetails;
 
-import lombok.RequiredArgsConstructor;
 
 @Transactional
 @Service
@@ -105,7 +112,7 @@ public class PostService {
         LocalDateTime toDate   = month.atEndOfMonth().atTime(LocalTime.MAX);
 
         List<Post> posts = postRepository.findAllByDateBetween(fromDate, toDate);
-        Map<LocalDate, Map<Sports, Long>> grouped = groupByDateAndSport(posts);
+        Map<LocalDate, Map<Sports, List<Post>>> grouped = groupByDateAndSport(posts);
         List<GetPostCalender> calendarEntries = toCalendarEntries(grouped);
 
         return GetPostsCalender.of(calendarEntries);
@@ -238,27 +245,38 @@ public class PostService {
         return month.atDay(1);
     }
 
-    private Map<LocalDate, Map<Sports, Long>> groupByDateAndSport(List<Post> posts) {
+    private Map<LocalDate, Map<Sports, List<Post>>> groupByDateAndSport(List<Post> posts) {
         return posts.stream()
             .collect(Collectors.groupingBy(
+
                 post -> post.getDate().toLocalDate(),
-                Collectors.groupingBy(Post::getSports, Collectors.counting())
+                Collectors.groupingBy(Post::getSports, Collectors.toList())
             ));
     }
 
-    private List<GetPostCalender> toCalendarEntries(Map<LocalDate, Map<Sports, Long>> grouped) {
-        return grouped.entrySet().stream()
-            .flatMap(dayEntry ->
-                dayEntry.getValue().entrySet().stream()
-                    .map(sportEntry -> new GetPostCalender(
-                        dayEntry.getKey().toString(),
-                        new GetPostCalender.Event(
-                            sportEntry.getKey().getLabel(),
-                            sportEntry.getValue().intValue()
-                        )
-                    ))
-            )
-            .sorted(Comparator.comparing(GetPostCalender::getDay))
-            .collect(Collectors.toList());
+    private List<GetPostCalender> toCalendarEntries(Map<LocalDate, Map<Sports, List<Post>>> grouped) {
+    	return grouped.entrySet().stream()
+    	        .flatMap(dayEntry ->
+    	            dayEntry.getValue().entrySet().stream()
+    	                .map(sportEntry -> {
+    	                    List<Post> postList = sportEntry.getValue();
+    	                    // 모집글 시간들만 뽑기 (예: "14:00")
+    	                    List<String> times = postList.stream()
+    	                        .map(post -> post.getDate().toLocalTime().toString())
+    	                        .sorted()
+    	                        .collect(Collectors.toList());
+
+    	                    return new GetPostCalender(
+    	                        dayEntry.getKey().toString(),
+    	                        new GetPostCalender.Event(
+    	                            sportEntry.getKey().getLabel(),
+    	                            postList.size(),
+    	                            times
+    	                        )
+    	                    );
+    	                })
+    	        )
+    	        .sorted(Comparator.comparing(GetPostCalender::getDay))
+    	        .collect(Collectors.toList());
     }
 }

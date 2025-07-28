@@ -13,10 +13,9 @@ import com.matchFit.post.entity.Post;
 public interface ParticipationRepository extends JpaRepository<Participation, Long> {
 	// 현재 신청자 수 계산
 	int countByPostId(Long postId);
-	
+
 	// 신청 승인된 사용자만 count
 	int countByPost_IdAndStatus(Long postId, ApplicationStatus status);
-	
 	
 	List<Participation> findAllByPostId(Long postId);
 
@@ -33,8 +32,7 @@ public interface ParticipationRepository extends JpaRepository<Participation, Lo
 	// 모집글마다 현재 신청인원 수 count
 	@Query("SELECT p.post.id, COUNT(p) FROM Participation p WHERE p.status = :status AND p.post.id IN :postIds GROUP BY p.post.id")
 	List<Object[]> countApprovedByPostIds(@Param("postIds") List<Long> postIds, @Param("status") ApplicationStatus status);
-
-
 	
 }
+
 
