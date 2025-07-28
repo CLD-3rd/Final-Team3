@@ -117,7 +117,7 @@ jobs:
           region: ap-northeast-2
 
       - name: Update kubeconfig for EKS
-        run: aws eks update-kubeconfig --name matchfit-eks --region ap-northeast-2
+        run: aws eks update-kubeconfig --name eks-monitoring --region ap-northeast-2
 
       - name: Deploy to EKS with kubectl
         run: |
