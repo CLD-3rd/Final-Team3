@@ -13,7 +13,8 @@ import lombok.Getter;
 @AllArgsConstructor
 @Getter
 public class GetPost {
-
+	
+	private Long id;
     private String title;
     private String sports;
     private String date;        // 날짜 형식은 String으로 했지만, 필요하면 LocalDateTime 등으로 변경 가능
@@ -26,6 +27,7 @@ public class GetPost {
 	public static List<GetPost> from(List<Post> posts, Map<Long, Long> viewCounts) {
 		return posts.stream()
 	            .map(post -> new GetPost(
+	            	post.getId(),
 	                post.getTitle(),
 	                post.getSports().getLabel(),
 	                post.getDate().toString(),
