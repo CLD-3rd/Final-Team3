@@ -102,7 +102,7 @@ public class PostService {
         LocalDateTime toDate   = month.atEndOfMonth().atTime(LocalTime.MAX);
 
         List<Post> posts = postRepository.findAllByDateBetween(fromDate, toDate);
-        Map<LocalDate, Map<Sports, Long>> grouped = groupByDateAndSport(posts);
+        Map<LocalDate, Map<Sports, List<Post>>> grouped = groupByDateAndSport(posts);
         List<GetPostCalender> calendarEntries = toCalendarEntries(grouped);
 
         return GetPostsCalender.of(calendarEntries);
@@ -235,27 +235,37 @@ public class PostService {
         return month.atDay(1);
     }
 
-    private Map<LocalDate, Map<Sports, Long>> groupByDateAndSport(List<Post> posts) {
+    private Map<LocalDate, Map<Sports, List<Post>>> groupByDateAndSport(List<Post> posts) {
         return posts.stream()
             .collect(Collectors.groupingBy(
-                post -> post.getDate().toLocalDate(),
-                Collectors.groupingBy(Post::getSports, Collectors.counting())
+            	post -> post.getDate().toLocalDate(),
+                Collectors.groupingBy(Post::getSports)
             ));
     }
 
-    private List<GetPostCalender> toCalendarEntries(Map<LocalDate, Map<Sports, Long>> grouped) {
-        return grouped.entrySet().stream()
-            .flatMap(dayEntry ->
-                dayEntry.getValue().entrySet().stream()
-                    .map(sportEntry -> new GetPostCalender(
-                        dayEntry.getKey().toString(),
-                        new GetPostCalender.Event(
-                            sportEntry.getKey().getLabel(),
-                            sportEntry.getValue().intValue()
-                        )
-                    ))
-            )
-            .sorted(Comparator.comparing(GetPostCalender::getDay))
-            .collect(Collectors.toList());
+    private List<GetPostCalender> toCalendarEntries(Map<LocalDate, Map<Sports, List<Post>>> grouped) {
+    	return grouped.entrySet().stream()
+    	        .flatMap(dayEntry ->
+    	            dayEntry.getValue().entrySet().stream()
+    	                .map(sportEntry -> {
+    	                    List<Post> postList = sportEntry.getValue();
+    	                    // 모집글 시간들만 뽑기 (예: "14:00")
+    	                    List<String> times = postList.stream()
+    	                        .map(post -> post.getDate().toLocalTime().toString())
+    	                        .sorted()
+    	                        .collect(Collectors.toList());
+
+    	                    return new GetPostCalender(
+    	                        dayEntry.getKey().toString(),
+    	                        new GetPostCalender.Event(
+    	                            sportEntry.getKey().getLabel(),
+    	                            postList.size(),
+    	                            times
+    	                        )
+    	                    );
+    	                })
+    	        )
+    	        .sorted(Comparator.comparing(GetPostCalender::getDay))
+    	        .collect(Collectors.toList());
     }
 }
