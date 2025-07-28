@@ -18,6 +18,7 @@ import com.matchFit.participation.repository.ParticipationRepository;
 import com.matchFit.post.dto.response.GetMyPostApplicant;
 import com.matchFit.post.dto.response.GetMyPostApplicants;
 import com.matchFit.post.entity.Post;
+import com.matchFit.post.entity.Status;
 import com.matchFit.post.exception.PostNotFoundException;
 import com.matchFit.post.exception.UnauthorizedUserException;
 import com.matchFit.post.repository.PostRepository;
@@ -96,7 +97,8 @@ public class ParticipationService {
         LocalDateTime date = post.getDate();
         Integer maxPeople = post.getMaxPeople();
         String location = post.getLocation(); 
-        Integer cost = post.getCost();       
+        Integer cost = post.getCost();
+        Status postStatus = post.getStatus();
         
         int currentPeople = participationRepository.countByPost_IdAndStatus(
                 post.getId(), 
@@ -111,7 +113,8 @@ public class ParticipationService {
                 maxPeople,
                 location,                       
                 cost,                        
-                applicationStatus                   
+                applicationStatus,
+                postStatus 
         );
     }
 
