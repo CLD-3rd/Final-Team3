@@ -118,3 +118,19 @@ jobs:
           git add .
           git commit -m "Update image tag to ${{ env.SHORT_SHA }}" || echo "No changes to commit"
           git push origin develop
+
+      ## argoCD없이 배포 (추후에 필요없어짐)
+      - name: Set up kubeconfig
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          region: ap-northeast-2
+
+      - name: Update kubeconfig for EKS
+        run: aws eks update-kubeconfig --name your-eks-cluster-name --region ap-northeast-2
+
+      - name: Deploy to EKS with kubectl
+        run: |
+          cd manifest/overlays/dev
+          kubectl apply -k .
