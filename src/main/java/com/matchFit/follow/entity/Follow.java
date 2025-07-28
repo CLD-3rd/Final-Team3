@@ -1,5 +1,6 @@
 package com.matchFit.follow.entity;
 
+import com.matchFit.common.entity.BaseEntity;
 import com.matchFit.post.entity.Post;
 import com.matchFit.user.entity.User;
 import jakarta.persistence.Entity;
@@ -20,7 +21,7 @@ import lombok.NoArgsConstructor;
 @Table(name = "follow", uniqueConstraints = {
     @UniqueConstraint(columnNames = {"userId", "postId"})
 })
-public class Follow {
+public class Follow extends BaseEntity {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -13,9 +13,6 @@ public interface ParticipationRepository extends JpaRepository<Participation, Lo
 	// 현재 신청자 수 계산
 	int countByPostId(Long postId);
 	
-	// 사용자의 찜 여부 확인
-	boolean existsByPostIdAndUserIdAndFollowTrue(Long postId, Long userId);
-	
 	// 신청 승인된 사용자만 count
 	int countByPost_IdAndStatus(Long postId, ApplicationStatus status);
 	
