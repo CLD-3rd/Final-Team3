@@ -97,7 +97,7 @@ public class ParticipationService {
         LocalDateTime date = post.getDate();
         Integer maxPeople = post.getMaxPeople();
         String location = post.getLocation(); 
-        Integer cost = post.getCost();
+        Integer cost = post.getCost();     
         Status postStatus = post.getStatus();
         
         int currentPeople = participationRepository.countByPost_IdAndStatus(
@@ -114,7 +114,7 @@ public class ParticipationService {
                 location,                       
                 cost,                        
                 applicationStatus,
-                postStatus 
+                postStatus
         );
     }
 
