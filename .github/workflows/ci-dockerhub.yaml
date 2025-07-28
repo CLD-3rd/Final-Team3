@@ -106,7 +106,8 @@ jobs:
 
       - name: Commit and push changes
         run: |
-
+          pwd
+          cd manifest
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add .
@@ -125,5 +126,6 @@ jobs:
 
       - name: Deploy to EKS with kubectl
         run: |
-          cd overlays/dev
+          pwd
+          cd manifest/overlays/dev
           kubectl apply -k .
