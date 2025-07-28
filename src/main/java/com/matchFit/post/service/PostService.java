@@ -22,6 +22,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.matchFit.follow.repository.FollowRepository;
 import com.matchFit.participation.entity.ApplicationStatus;
 import com.matchFit.participation.repository.ParticipationRepository;
 import com.matchFit.post.dto.PostInfoResponseDto;
@@ -55,7 +56,7 @@ import com.matchFit.user.security.CustomUserDetails;
 @Service
 @RequiredArgsConstructor
 public class PostService {
-
+	private final FollowRepository followRepository;
 	private final ParticipationRepository participationRepository;
     private final PostRepository postRepository;
     private final PostViewService postViewService;
@@ -131,7 +132,7 @@ public class PostService {
 		
 		boolean isBookmarked = false; 
 	    if (userId != null) {
-	        isBookmarked = participationRepository.existsByPostIdAndUserIdAndFollowTrue(postId, userId);
+	    	isBookmarked = followRepository.existsByUserIdAndPostId(userId, postId);
 	    }	
 		return new PostInfoResponseDto(post, currentParticipantsCount, isBookmarked);
 	}
@@ -149,6 +150,7 @@ public class PostService {
                     post.getDate(),
                     participationRepository.countByPost_IdAndStatus(post.getId(),ApplicationStatus.APPROVED),
                     post.getMaxPeople(),
+
                     post.getStatus().name()
             ))
             .collect(Collectors.toList());
@@ -194,7 +196,7 @@ public class PostService {
 	        throw new PastEventModificationException();
 	    }
 	    
-	    // 게시글 정보 업데이트 (그대로)
+	    // 게시글 정보 업데이트
 	    post.setTitle(request.getTitle());
 	    post.setDescription(request.getDescription());
 	    post.setLocation(request.getLocation());
@@ -238,8 +240,9 @@ public class PostService {
     private Map<LocalDate, Map<Sports, List<Post>>> groupByDateAndSport(List<Post> posts) {
         return posts.stream()
             .collect(Collectors.groupingBy(
-            	post -> post.getDate().toLocalDate(),
-                Collectors.groupingBy(Post::getSports)
+
+                post -> post.getDate().toLocalDate(),
+                Collectors.groupingBy(Post::getSports, Collectors.toList())
             ));
     }
 

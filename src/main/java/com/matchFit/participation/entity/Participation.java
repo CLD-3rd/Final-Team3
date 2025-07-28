@@ -34,9 +34,7 @@ public class Participation extends BaseEntity {
 	// 신청 상태의 status, 모집 상태의 status랑 구분
 	@Enumerated(EnumType.STRING)
 	private ApplicationStatus status;
-	
-	private boolean follow;
-	
+		
 	protected Participation() {}
 	
 	public Participation(User user, Post post) {
