@@ -32,8 +32,7 @@ public interface ParticipationRepository extends JpaRepository<Participation, Lo
 	// 모집글마다 현재 신청인원 수 count
 	@Query("SELECT p.post.id, COUNT(p) FROM Participation p WHERE p.status = :status AND p.post.id IN :postIds GROUP BY p.post.id")
 	List<Object[]> countApprovedByPostIds(@Param("postIds") List<Long> postIds, @Param("status") ApplicationStatus status);
-
-
 	
 }
+
 
