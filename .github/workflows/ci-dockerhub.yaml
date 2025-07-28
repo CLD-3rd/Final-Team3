@@ -102,7 +102,7 @@ jobs:
           ls -la manifest
           ls -la manifest/overlays/dev
           cd manifest/overlays/dev
-          kustomize edit set image ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DOCKERHUB_REPOSITORY }}=${{ env.SHORT_SHA }}
+          kustomize edit set image alex62626/matchfit=${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DOCKERHUB_REPOSITORY }}:${{ env.SHORT_SHA }}
 
       - name: Commit and push changes
         run: |
