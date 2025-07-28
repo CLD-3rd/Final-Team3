@@ -6,6 +6,7 @@ import java.time.LocalTime;
 import java.time.YearMonth;
 import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -44,7 +45,6 @@ import com.matchFit.user.security.CustomUserDetails;
 
 import lombok.RequiredArgsConstructor;
 
-
 @Transactional
 @Service
 @RequiredArgsConstructor
@@ -74,6 +74,15 @@ public class PostService {
     	// 2) 조회수 맵 조회
         Map<Long, Long> counts = postViewService.getViewCounts(ids);
     	
+        // 현재 신청인원 count
+        List<Object[]> approvedCounts = participationRepository.countApprovedByPostIds(ids, ApplicationStatus.APPROVED);
+        Map<Long, Integer> currentPeopleMap = new HashMap<>();
+        for (Object[] row : approvedCounts) {
+            Long postId = (Long) row[0];
+            Long count = (Long) row[1];
+            currentPeopleMap.put(postId, count.intValue());
+        }
+        
     	if (sortType == SortType.DATE) {
            posts = sortPostsByDate(posts, sortType);
     	} else if (sortType == SortType.POPULAR) {
@@ -82,7 +91,7 @@ public class PostService {
             throw new InvalidSortingTypeException();
         }
         
-		List<GetPost> postDtos = GetPost.from(posts, counts);
+		List<GetPost> postDtos = GetPost.from(posts, counts, currentPeopleMap);
 
         return GetPostsList.of(postDtos);
     }
@@ -143,7 +152,6 @@ public class PostService {
                     post.getDate(),
                     participationRepository.countByPost_IdAndStatus(post.getId(),ApplicationStatus.APPROVED),
                     post.getMaxPeople(),
-
                     post.getStatus().name()
             ))
             .collect(Collectors.toList());
