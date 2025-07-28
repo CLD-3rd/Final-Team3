@@ -8,6 +8,7 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public class GetMyPost {
+	private Long postId;
 	private String title;
     private LocalDateTime date;
     private Integer currentPeople;

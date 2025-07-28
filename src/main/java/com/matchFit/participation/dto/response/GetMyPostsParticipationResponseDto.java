@@ -9,9 +9,12 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class GetMyPostsParticipationResponseDto {
+    private Long postId;           
     private String title;
     private String date;
     private int currentPeople;
     private int maxPeople;
+    private String location;       
+    private Integer cost;         
     private ApplicationStatus status;
 }
