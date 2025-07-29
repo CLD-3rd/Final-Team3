@@ -18,7 +18,7 @@ jobs:
       AWS_REGION: ap-northeast-2
       VPN_ENDPOINT_ID: ${{ secrets.VPN_ENDPOINT_ID }}
       VPC_CIDR: 100.0.0.0/16
-      SUBNET_IDS: "subnet-04aad5ac72d8d1437 subnet-00f10b0cea348a8b1 subnet-09a406758275bfbeb"
+      SUBNET_IDS: "subnet-061958855dfe00e2c subnet-0cdfd2107ee5d89db subnet-0d3f192cc41c343df"
 
     steps:
       - name: Configure AWS Credentials
