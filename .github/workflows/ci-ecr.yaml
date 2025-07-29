@@ -1,4 +1,4 @@
-name: CI - Build and Deploy via ArgoCD
+name: CI - Build and Deploy via ECR
 
 on:
   workflow_dispatch:
