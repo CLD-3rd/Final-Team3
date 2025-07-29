@@ -89,11 +89,7 @@ jobs:
         with:
           repository: CLD-3rd/Final-Team3-manifests
           token: ${{ secrets.GH_TOKEN }}
-<<<<<<< HEAD
-          ref: develop
-=======
           ref: feat/app
->>>>>>> 66b3929c17c4f9d5baba81829f4e22626ff42c00
           path: manifest
 
       - name: Install kustomize
@@ -101,13 +97,6 @@ jobs:
 
       - name: Update image tag in kustomization.yaml
         run: |
-<<<<<<< HEAD
-          cd manifest/overlays/dev
-          kustomize edit set image ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DOCKERHUB_REPOSITORY }}=${{ env.SHORT_SHA }}
-
-      - name: Commit and push changes
-        run: |
-=======
           pwd
           ls -la
           ls -la manifest
@@ -118,32 +107,18 @@ jobs:
       - name: Commit and push changes
         run: |
           pwd
->>>>>>> 66b3929c17c4f9d5baba81829f4e22626ff42c00
           cd manifest
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add .
           git commit -m "Update image tag to ${{ env.SHORT_SHA }}" || echo "No changes to commit"
-<<<<<<< HEAD
-          git push origin develop
-=======
           git push origin feat/app
->>>>>>> 66b3929c17c4f9d5baba81829f4e22626ff42c00
 
       - name: Set up kubeconfig
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-<<<<<<< HEAD
-          region: ap-northeast-2
-
-      - name: Update kubeconfig for EKS
-        run: aws eks update-kubeconfig --name matchfit-eks --region ap-northeast-2
-
-      - name: Deploy to EKS with kubectl
-        run: |
-=======
           aws-region: ap-northeast-2
 
       - name: Update kubeconfig for EKS
@@ -152,6 +127,5 @@ jobs:
       - name: Deploy to EKS with kubectl
         run: |
           pwd
->>>>>>> 66b3929c17c4f9d5baba81829f4e22626ff42c00
           cd manifest/overlays/dev
           kubectl apply -k .
