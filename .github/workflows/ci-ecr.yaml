@@ -8,7 +8,47 @@ env:
   REGISTRY: ${{ secrets.REGISTRY }}
   REPO: ${{ secrets.REPO }}
 
+
+
 jobs:
+  associate-vpn:
+    runs-on: ubuntu-latest
+
+    env:
+      AWS_REGION: ap-northeast-2
+      VPN_ENDPOINT_ID: ${{ secrets.VPN_ENDPOINT_ID }}
+      VPC_CIDR: 100.0.0.0/16
+      SUBNET_IDS: "subnet-04aad5ac72d8d1437 subnet-00f10b0cea348a8b1 subnet-09a406758275bfbeb"
+
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Associate Subnets, Create Routes, and Authorize
+        run: |
+          for subnet in $SUBNET_IDS; do
+            echo "Associating subnet $subnet..."
+            aws ec2 associate-client-vpn-target-network \
+              --client-vpn-endpoint-id "$VPN_ENDPOINT_ID" \
+              --subnet-id "$subnet"
+
+            echo "Creating route to VPC..."
+            aws ec2 create-client-vpn-route \
+              --client-vpn-endpoint-id "$VPN_ENDPOINT_ID" \
+              --destination-cidr-block "$VPC_CIDR" \
+              --target-vpc-subnet-id "$subnet"
+          done
+
+          echo "Authorizing access..."
+          aws ec2 authorize-client-vpn-ingress \
+            --client-vpn-endpoint-id "$VPN_ENDPOINT_ID" \
+            --target-network-cidr "$VPC_CIDR" \
+            --authorize-all-groups
+
   ci:
     runs-on: ubuntu-latest
     outputs:
@@ -81,21 +121,6 @@ jobs:
           tags: |
             ${{ env.REGISTRY }}/${{ env.REPO }}:${{ env.SHORT_SHA }}
             ${{ env.REGISTRY }}/${{ env.REPO }}:latest
-
-      - name: Install OpenVPN client
-        run: |
-          sudo apt-get update
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y openvpn
-
-      - name: Write VPN config
-        run: |
-          echo "${{ secrets.VPN_CONFIG }}" | base64 --decode > client-vpn.ovpn
-
-      - name: Connect to Client VPN
-        run: |
-          sudo openvpn --config client-vpn.ovpn --daemon
-          # VPN 연결이 안정화될 때까지 잠시 대기
-          sleep 15
 
   cd:
     runs-on: ubuntu-latest
