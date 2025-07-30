@@ -26,6 +26,7 @@ public class PostInfoResponseDto {
 	private String location;
 	private Integer currentPeople; // 따로 구현
 	private boolean isBookmarked;  // 따로 구현
+	private String userEmail;
 	
 	public PostInfoResponseDto(Post post, int currentPeople, boolean isBookmarked) {
 		this.id = post.getId();
@@ -42,7 +43,7 @@ public class PostInfoResponseDto {
 		this.location = post.getLocation();
 		this.currentPeople = currentPeople;
 		this.isBookmarked = isBookmarked;
-		
+		this.userEmail = post.getUser().getEmail();
 		
 	}
 	
