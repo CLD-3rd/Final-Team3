@@ -24,4 +24,5 @@ public class UpdatePostRequestDto {
     private String imageUrl;
     private Sports sports;
     private Town town;
+    private Boolean removeImage;
 }

@@ -1,12 +1,5 @@
 package com.matchFit.post.service;
 
-import com.matchFit.participation.entity.ApplicationStatus;
-import com.matchFit.participation.repository.ParticipationRepository;
-import com.matchFit.post.dto.PostInfoResponseDto;
-import com.matchFit.post.dto.PostRequestDto;
-	
-import lombok.RequiredArgsConstructor;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -19,9 +12,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.matchFit.follow.repository.FollowRepository;
 import com.matchFit.participation.entity.ApplicationStatus;
@@ -47,9 +40,12 @@ import com.matchFit.post.exception.PastMonthException;
 import com.matchFit.post.exception.PostNotFoundException;
 import com.matchFit.post.exception.UnauthorizedUserException;
 import com.matchFit.post.repository.PostRepository;
+import com.matchFit.s3.service.S3Service;
 import com.matchFit.user.entity.Gender;
 import com.matchFit.user.entity.User;
 import com.matchFit.user.security.CustomUserDetails;
+
+import lombok.RequiredArgsConstructor;
 
 
 @Transactional
@@ -60,7 +56,8 @@ public class PostService {
 	private final ParticipationRepository participationRepository;
     private final PostRepository postRepository;
     private final PostViewService postViewService;
-
+    private final S3Service s3Service;
+    
     public GetPostsList findByFilters(Sports sports, Gender gender, SortType sortType, LocalDate date) {
     	// 이전 날짜값이 들어오면 예외 처리
     	if (date != null) {
@@ -121,9 +118,28 @@ public class PostService {
     
 	
 	// 모집 글 생성
-	public Post create(PostRequestDto dto, @AuthenticationPrincipal CustomUserDetails userDetails) {
+    public Post create(PostRequestDto dto, MultipartFile image, @AuthenticationPrincipal CustomUserDetails userDetails) {
+		String imageUrl = null;
+		
+		// 이미지가 있으면 S3에 업로드
+	    if (image != null && !image.isEmpty()) {
+	        if (!s3Service.isValidImageFile(image)) {
+	            throw new RuntimeException("이미지 파일만 업로드 가능합니다.");
+	        }
+	        
+	        try {
+	            imageUrl = s3Service.uploadFile(image);
+	        } catch (Exception e) {
+	            throw new RuntimeException("이미지 업로드에 실패했습니다.", e);
+	        }
+	    }
+		
 		User currentUser = userDetails.getUser();
-		return postRepository.save(dto.toEntity(currentUser));
+		
+		Post post = dto.toEntity(currentUser);
+		post.setImageUrl(imageUrl);  // 이미지 URL 설정
+		
+		return postRepository.save(post);
 	}
 	
 	// 모집 글 상세 조회
@@ -185,9 +201,9 @@ public class PostService {
                     .collect(Collectors.toList());
     }
 	
-	
+	// 모집글 수정
 	@Transactional
-	public UpdatePostResponseDto updatePost(Long postId, UpdatePostRequestDto request, CustomUserDetails userDetails) {
+	public UpdatePostResponseDto updatePost(Long postId, UpdatePostRequestDto request, MultipartFile image, CustomUserDetails userDetails) {
 	    // 게시글 조회
 	    Post post = postRepository.findById(postId)
 	        .orElseThrow(() -> new PostNotFoundException());
@@ -204,6 +220,38 @@ public class PostService {
 	        throw new PastEventModificationException();
 	    }
 	    
+	    String newImageUrl = post.getImageUrl(); // 기존 이미지 URL
+	    
+	    // 이미지 처리 로직
+	    if (image != null && !image.isEmpty()) {
+	        // 새 이미지가 있는 경우
+	        if (!s3Service.isValidImageFile(image)) {
+	            throw new RuntimeException("이미지 파일만 업로드 가능합니다.");
+	        }
+	        
+	        try {
+	            // 새 이미지 업로드
+	            newImageUrl = s3Service.uploadFile(image);
+	            
+	            // 기존 이미지가 있었다면 삭제
+	            if (post.getImageUrl() != null) {
+	                s3Service.deleteFileByUrl(post.getImageUrl());
+	            }
+	        } catch (Exception e) {
+	            throw new RuntimeException("이미지 업로드에 실패했습니다.", e);
+	        }
+	    } else if (request.getRemoveImage() != null && request.getRemoveImage()) {
+	        // 이미지 삭제 요청인 경우
+	        if (post.getImageUrl() != null) {
+	            try {
+	                s3Service.deleteFileByUrl(post.getImageUrl());
+	                newImageUrl = null;
+	            } catch (Exception e) {
+	                throw new RuntimeException("이미지 삭제에 실패했습니다.", e);
+	            }
+	        }
+	    }
+	    
 	    // 게시글 정보 업데이트
 	    post.setTitle(request.getTitle());
 	    post.setDescription(request.getDescription());
@@ -213,7 +261,7 @@ public class PostService {
 	    post.setGender(request.getGender());
 	    post.setStatus(request.getStatus());
 	    post.setCost(request.getCost());
-	    post.setImageUrl(request.getImageUrl());
+	    post.setImageUrl(newImageUrl);  // 이미지 URL 업데이트
 	    post.setSports(request.getSports());
 	    post.setTown(request.getTown());
 	    
