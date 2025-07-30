@@ -2,7 +2,6 @@ package com.matchFit.post.controller;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
-import java.util.Collections;
 
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -15,7 +14,9 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.matchFit.common.code.SuccessCode;
 import com.matchFit.common.dto.response.ApiResponseDTO;
@@ -29,7 +30,6 @@ import com.matchFit.post.dto.response.GetMyPostApplicants;
 import com.matchFit.post.dto.response.GetMyPosts;
 import com.matchFit.post.dto.response.GetPostsCalender;
 import com.matchFit.post.dto.response.GetPostsList;
-import com.matchFit.post.entity.Post;
 import com.matchFit.post.entity.SortType;
 import com.matchFit.post.entity.Sports;
 import com.matchFit.post.service.PostService;
@@ -51,15 +51,13 @@ public class PostController {
 
 	// 모집글 생성
 	@PostMapping
-	public ResponseEntity<ApiResponseDTO<String>> createPosts(@RequestBody PostRequestDto dto,
+	public ResponseEntity<ApiResponseDTO<String>> createPosts(
+			@RequestPart("postData") PostRequestDto dto,
+			@RequestPart(value = "image", required = false) MultipartFile image,
 			@AuthenticationPrincipal CustomUserDetails userDetails) {
-		postService.create(dto, userDetails);
-
-		//return ResponseEntity.status(HttpStatus.CREATED).body("모집글 생성 성공");		
-
-
+		
+		postService.create(dto, image, userDetails);
 		return ResponseEntity.ok(ApiResponseDTO.onSuccess(SuccessCode.POST_CREATED, null));		
-
 	}
 	
 	// 모집글 상세 조회
@@ -132,11 +130,11 @@ public class PostController {
 	@PutMapping("/{postId}")
 	public ResponseEntity<ApiResponseDTO<UpdatePostResponseDto>> updatePost(  
 	    @PathVariable Long postId,
-	    @RequestBody UpdatePostRequestDto request,  // 그대로 유지
+	    @RequestPart("postData") UpdatePostRequestDto request,
+	    @RequestPart(value = "image", required = false) MultipartFile image,
 	    @AuthenticationPrincipal CustomUserDetails userDetails) {
 	    
-
-        UpdatePostResponseDto response = postService.updatePost(postId, request, userDetails);
+        UpdatePostResponseDto response = postService.updatePost(postId, request, image, userDetails);
         return ResponseEntity.ok(ApiResponseDTO.onSuccess(SuccessCode.POST_UPDATED, response));
 	}
 
