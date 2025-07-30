@@ -8,7 +8,8 @@ import lombok.Getter;
 @Getter
 public enum Gender {
 	MALE("남성"),
-    FEMALE("여성");
+        FEMALE("여성"),
+	ALL("남녀 모두");
 	
 	private final String label;
 	private static final Map<String, Gender> LABEL_MAP = new HashMap<>();
