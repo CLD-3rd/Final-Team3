@@ -22,6 +22,7 @@ public class GetPost {
     private String date;        // 날짜 형식은 String으로 했지만, 필요하면 LocalDateTime 등으로 변경 가능
     private String status;
     private String town;
+    private Integer cost;
     private Integer currentPeople;
     private Integer maxPeople;
     private String gender;
@@ -38,6 +39,7 @@ public class GetPost {
 	                post.getDate().toString(),
 	                post.getStatus().getLabel(),
 	                post.getTown().getLabel(),	
+	                post.getCost(),
 	                currentPeopleMap.getOrDefault(post.getId(), 0),
 	                post.getMaxPeople(),	          
 	                post.getGender().getLabel(),
