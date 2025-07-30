@@ -2,11 +2,13 @@ package com.matchFit.post.entity;
 
 public enum Town {
 	SEOUL("서울"), 
-	GYEONGGI("경기"), 
+	GYEONGGI("경기"),
+	GANGWON("강원"),
 	INCHEON("인천"), 
 	DAEJEON("대전"), 
 	DAEGU("대구"), 
-	ULSAN("울산"), 
+	ULSAN("울산"),
+	BUSAN("부산"),
 	GWANGJU("광주"), 
 	SEJONG("세종"),
 	CHUNGBUK("충북"), 
