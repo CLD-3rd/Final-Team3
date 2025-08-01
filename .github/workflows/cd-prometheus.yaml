@@ -2,7 +2,7 @@ name: CD - Deploy Prometheus Stack
 
 on:
   workflow_run:
-    workflows: ["CD - Deploy App to EKS"]
+    workflows: ["CD - Associate VPN and Deploy to EKS"]
     types:
       - completed
 
