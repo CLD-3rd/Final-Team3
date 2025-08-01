@@ -165,8 +165,3 @@ jobs:
       - name: Update kubeconfig for EKS
         run: aws eks update-kubeconfig --name matchfit-eks --region ap-northeast-2
 
-      - name: Deploy to EKS with kubectl
-        run: |
-          pwd
-          cd manifest/overlays/dev
-          kubectl apply -k .
