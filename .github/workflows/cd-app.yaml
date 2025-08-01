@@ -1,0 +1,76 @@
+name: CD - Associate VPN and Deploy to EKS
+
+on:
+  workflow_run:
+    workflows: ["CI - Build and Push Docker Image"]
+    types:
+      - completed
+
+env:
+  AWS_REGION: ap-northeast-2
+  VPN_ENDPOINT_ID: ${{ secrets.VPN_ENDPOINT_ID }}
+  VPC_CIDR: 100.0.0.0/16
+  SUBNET_IDS: "subnet-061958855dfe00e2c subnet-0cdfd2107ee5d89db subnet-0d3f192cc41c343df"
+
+jobs:
+  associate-vpn:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Associate subnets and configure VPN routes
+        run: |
+          for subnet in $SUBNET_IDS; do
+            echo "Associating subnet $subnet..."
+            aws ec2 associate-client-vpn-target-network \
+              --client-vpn-endpoint-id "$VPN_ENDPOINT_ID" \
+              --subnet-id "$subnet"
+
+            echo "Creating route to VPC..."
+            aws ec2 create-client-vpn-route \
+              --client-vpn-endpoint-id "$VPN_ENDPOINT_ID" \
+              --destination-cidr-block "$VPC_CIDR" \
+              --target-vpc-subnet-id "$subnet"
+          done
+
+          echo "Authorizing access to VPC..."
+          aws ec2 authorize-client-vpn-ingress \
+            --client-vpn-endpoint-id "$VPN_ENDPOINT_ID" \
+            --target-network-cidr "$VPC_CIDR" \
+            --authorize-all-groups
+
+  deploy:
+    needs: associate-vpn
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout manifest repository
+        uses: actions/checkout@v4
+        with:
+          repository: CLD-3rd/Final-Team3-manifests
+          token: ${{ secrets.GH_TOKEN }}
+          ref: feat/app
+          path: manifest
+
+      - name: Set up AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-northeast-2
+
+      - name: Update kubeconfig for EKS
+        run: aws eks update-kubeconfig --name matchfit-eks --region ap-northeast-2
+
+      - name: Deploy to EKS with kubectl
+        run: |
+          cd manifest/overlays/dev
+          kubectl apply -k .
+
