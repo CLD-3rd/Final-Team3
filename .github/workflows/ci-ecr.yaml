@@ -11,44 +11,6 @@ env:
 
 
 jobs:
-  associate-vpn:
-    runs-on: ubuntu-latest
-
-    env:
-      AWS_REGION: ap-northeast-2
-      VPN_ENDPOINT_ID: ${{ secrets.VPN_ENDPOINT_ID }}
-      VPC_CIDR: 100.0.0.0/16
-      SUBNET_IDS: "subnet-061958855dfe00e2c subnet-0cdfd2107ee5d89db subnet-0d3f192cc41c343df"
-
-    steps:
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Associate Subnets, Create Routes, and Authorize
-        run: |
-          for subnet in $SUBNET_IDS; do
-            echo "Associating subnet $subnet..."
-            aws ec2 associate-client-vpn-target-network \
-              --client-vpn-endpoint-id "$VPN_ENDPOINT_ID" \
-              --subnet-id "$subnet"
-
-            echo "Creating route to VPC..."
-            aws ec2 create-client-vpn-route \
-              --client-vpn-endpoint-id "$VPN_ENDPOINT_ID" \
-              --destination-cidr-block "$VPC_CIDR" \
-              --target-vpc-subnet-id "$subnet"
-          done
-
-          echo "Authorizing access..."
-          aws ec2 authorize-client-vpn-ingress \
-            --client-vpn-endpoint-id "$VPN_ENDPOINT_ID" \
-            --target-network-cidr "$VPC_CIDR" \
-            --authorize-all-groups
-
   ci:
     runs-on: ubuntu-latest
     outputs:
