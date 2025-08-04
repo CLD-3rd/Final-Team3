@@ -152,11 +152,6 @@ jobs:
       - name: Update kubeconfig for EKS
         run: aws eks update-kubeconfig --name matchfit-eks --region ap-northeast-2
   
-      - name: Download SealedSecrets public cert
-        run: |
-          mkdir -p manifest/certs
-          kubectl get secret -n kube-system sealed-secrets-key -o jsonpath="{.data['tls\.crt']}" | base64 -d > manifest/certs/pub-cert.pem
-  
       - name: Create SealedSecret from argocd.env
         run: |
           cd manifest/overlays/dev
@@ -165,7 +160,9 @@ jobs:
             --dry-run=client -o json > argocd-plain-secret.json
   
           kubeseal --format=yaml \
-            --cert=../certs/pub-cert.pem \
+            --controller-name=sealed-secrets \
+            --controller-namespace=kube-system \
+            --fetch-cert \
             < argocd-plain-secret.json > sealed-secret.yaml
   
           rm -f argocd.env argocd-plain-secret.json
