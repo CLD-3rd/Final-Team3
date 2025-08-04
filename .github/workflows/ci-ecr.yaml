@@ -120,17 +120,16 @@ jobs:
   
       - name: Generate argocd.env from GitHub Secrets
         run: |
-          cat <<EOF > manifest/overlays/dev/argocd.env
-ENV_SET=${{ secrets.ENV_SET }}
-SPRING_DATASOURCE_URL=${{ secrets.SPRING_DATASOURCE_URL }}
-SPRING_DATASOURCE_USERNAME=${{ secrets.SPRING_DATASOURCE_USERNAME }}
-SPRING_DATASOURCE_PASSWORD=${{ secrets.SPRING_DATASOURCE_PASSWORD }}
-SPRING_DATASOURCE_DRIVER-CLASS-NAME=${{ secrets.SPRING_DATASOURCE_DRIVER_CLASS_NAME }}
-SPRING_DATA_REDIS_HOST=${{ secrets.SPRING_DATA_REDIS_HOST }}
-SPRING_DATA_REDIS_PORT=${{ secrets.SPRING_DATA_REDIS_PORT }}
-SPRING_DATA_REDIS_PASSWORD=${{ secrets.SPRING_DATA_REDIS_PASSWORD }}
-SPRING_JPA_HIBERNATE_DDL-AUTO=${{ secrets.SPRING_JPA_HIBERNATE_DDL_AUTO }}
-EOF
+          echo "ENV_SET=${{ secrets.ENV_SET }}" > manifest/overlays/dev/argocd.env
+          echo "SPRING_DATASOURCE_URL=${{ secrets.SPRING_DATASOURCE_URL }}" >> manifest/overlays/dev/argocd.env
+          echo "SPRING_DATASOURCE_USERNAME=${{ secrets.SPRING_DATASOURCE_USERNAME }}" >> manifest/overlays/dev/argocd.env
+          echo "SPRING_DATASOURCE_PASSWORD=${{ secrets.SPRING_DATASOURCE_PASSWORD }}" >> manifest/overlays/dev/argocd.env
+          echo "SPRING_DATASOURCE_DRIVER-CLASS-NAME=${{ secrets.SPRING_DATASOURCE_DRIVER_CLASS_NAME }}" >> manifest/overlays/dev/argocd.env
+          echo "SPRING_DATA_REDIS_HOST=${{ secrets.SPRING_DATA_REDIS_HOST }}" >> manifest/overlays/dev/argocd.env
+          echo "SPRING_DATA_REDIS_PORT=${{ secrets.SPRING_DATA_REDIS_PORT }}" >> manifest/overlays/dev/argocd.env
+          echo "SPRING_DATA_REDIS_PASSWORD=${{ secrets.SPRING_DATA_REDIS_PASSWORD }}" >> manifest/overlays/dev/argocd.env
+          echo "SPRING_JPA_HIBERNATE_DDL-AUTO=${{ secrets.SPRING_JPA_HIBERNATE_DDL_AUTO }}" >> manifest/overlays/dev/argocd.env
+
   
       - name: Install kubeseal
         run: |
