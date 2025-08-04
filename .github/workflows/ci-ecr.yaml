@@ -134,9 +134,9 @@ jobs:
       - name: Install kubeseal
         run: |
           KUBESEAL_VERSION=$(curl -s https://api.github.com/repos/bitnami-labs/sealed-secrets/releases/latest | grep tag_name | cut -d '"' -f 4)
-          wget https://github.com/bitnami-labs/sealed-secrets/releases/download/${KUBESEAL_VERSION}/kubeseal-${KUBESEAL_VERSION}-linux-amd64.tar.gz
-          tar -xzf kubeseal-${KUBESEAL_VERSION}-linux-amd64.tar.gz
-          sudo mv kubeseal /usr/local/bin/kubeseal
+          curl -LO https://github.com/bitnami-labs/sealed-secrets/releases/download/${KUBESEAL_VERSION}/kubeseal-${KUBESEAL_VERSION#v}-linux-amd64.tar.gz
+          tar -xzf kubeseal-${KUBESEAL_VERSION#v}-linux-amd64.tar.gz kubeseal
+          sudo install -m 755 kubeseal /usr/local/bin/kubeseal
           kubeseal --version
 
 
