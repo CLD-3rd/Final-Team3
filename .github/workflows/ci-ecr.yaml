@@ -165,15 +165,14 @@ jobs:
           cd manifest/overlays/dev
           kubectl create secret generic argocd-env-vars \
             --from-env-file=argocd.env \
-            --dry-run=client -o json > argocd-plain-secret.json
-
-          kubeseal --format=yaml \
+            --dry-run=client \
+            -o yaml | kubeseal \
+            --format=yaml \
             --controller-name=sealed-secrets \
             --controller-namespace=kube-system \
-            --fetch-cert \
-            < argocd-plain-secret.json > sealed-secret.yaml
+            > sealed-secret.yaml
 
-          rm -f argocd.env argocd-plain-secret.json
+          rm -f argocd.env
 
       - name: Commit and push SealedSecret
         run: |
