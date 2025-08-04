@@ -133,9 +133,11 @@ jobs:
   
       - name: Install kubeseal
         run: |
-          wget https://github.com/bitnami-labs/sealed-secrets/releases/download/v0.24.6/kubeseal-0.24.6-linux-amd64.tar.gz
-          tar -xvzf kubeseal-0.24.6-linux-amd64.tar.gz
-          sudo install kubeseal /usr/local/bin/
+          KUBSEAL_VERSION=$(curl -s https://api.github.com/repos/bitnami-labs/sealed-secrets/releases/latest | grep tag_name | cut -d '"' -f 4)
+          wget https://github.com/bitnami-labs/sealed-secrets/releases/download/${KUBSEAL_VERSION}/kubeseal-linux-amd64
+          chmod +x kubeseal-linux-amd64
+          sudo mv kubeseal-linux-amd64 /usr/local/bin/kubeseal
+
   
       - name: Set up kubeconfig
         uses: aws-actions/configure-aws-credentials@v2
