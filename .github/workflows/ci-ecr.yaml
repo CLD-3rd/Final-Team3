@@ -91,7 +91,7 @@ jobs:
       SHORT_SHA: ${{ needs.ci.outputs.short_sha }}
       REGISTRY: ${{ secrets.REGISTRY }}
       REPO: ${{ secrets.REPO }}
-
+  
     steps:
       - name: Checkout manifest repository
         uses: actions/checkout@v4
@@ -100,30 +100,77 @@ jobs:
           token: ${{ secrets.GH_TOKEN }}
           ref: feat/app
           path: manifest
-
+  
       - name: Install kustomize
         uses: imranismail/setup-kustomize@v2
-
+  
       - name: Update image tag in kustomization.yaml
         run: |
           cd manifest/overlays/dev
           kustomize edit set image ${{ env.REGISTRY }}/${{ env.REPO }}:${{ env.SHORT_SHA }}
-
-      - name: Commit and push changes
+  
+      - name: Commit and push image tag changes
         run: |
           cd manifest
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add .
+          git add overlays/dev/kustomization.yaml
           git commit -m "Update image tag to ${{ env.SHORT_SHA }}" || echo "No changes to commit"
           git push origin feat/app
+  
+      - name: Generate argocd.env from GitHub Secrets
+        run: |
+          cat <<EOF > manifest/overlays/dev/argocd.env
+  ENV_SET=${{ secrets.ENV_SET }}
+  SPRING_DATASOURCE_URL=${{ secrets.SPRING_DATASOURCE_URL }}
+  SPRING_DATASOURCE_USERNAME=${{ secrets.SPRING_DATASOURCE_USERNAME }}
+  SPRING_DATASOURCE_PASSWORD=${{ secrets.SPRING_DATASOURCE_PASSWORD }}
+  SPRING_DATASOURCE_DRIVER-CLASS-NAME=${{ secrets.SPRING_DATASOURCE_DRIVER_CLASS_NAME }}
+  SPRING_DATA_REDIS_HOST=${{ secrets.SPRING_DATA_REDIS_HOST }}
+  SPRING_DATA_REDIS_PORT=${{ secrets.SPRING_DATA_REDIS_PORT }}
+  SPRING_DATA_REDIS_PASSWORD=${{ secrets.SPRING_DATA_REDIS_PASSWORD }}
+  SPRING_JPA_HIBERNATE_DDL-AUTO=${{ secrets.SPRING_JPA_HIBERNATE_DDL_AUTO }}
+  EOF
+  
+      - name: Install kubeseal
+        run: |
+          wget https://github.com/bitnami-labs/sealed-secrets/releases/download/v0.24.6/kubeseal-0.24.6-linux-amd64.tar.gz
+          tar -xvzf kubeseal-0.24.6-linux-amd64.tar.gz
+          sudo install kubeseal /usr/local/bin/
+  
       - name: Set up kubeconfig
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-northeast-2
-
+  
       - name: Update kubeconfig for EKS
         run: aws eks update-kubeconfig --name matchfit-eks --region ap-northeast-2
-
+  
+      - name: Download SealedSecrets public cert
+        run: |
+          mkdir -p manifest/certs
+          kubectl get secret -n kube-system sealed-secrets-key -o jsonpath="{.data['tls\.crt']}" | base64 -d > manifest/certs/pub-cert.pem
+  
+      - name: Create SealedSecret from argocd.env
+        run: |
+          cd manifest/overlays/dev
+          kubectl create secret generic argocd-env-vars \
+            --from-env-file=argocd.env \
+            --dry-run=client -o json > argocd-plain-secret.json
+  
+          kubeseal --format=yaml \
+            --cert=../certs/pub-cert.pem \
+            < argocd-plain-secret.json > sealed-secret.yaml
+  
+          rm -f argocd.env argocd-plain-secret.json
+  
+      - name: Commit and push SealedSecret
+        run: |
+          cd manifest
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add overlays/dev/sealed-secret.yaml
+          git commit -m "Auto: update sealed-secret from argocd.env" || echo "No changes to commit"
+          git push origin feat/app
