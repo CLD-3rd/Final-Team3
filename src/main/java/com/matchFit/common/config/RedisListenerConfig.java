@@ -46,19 +46,19 @@ public class RedisListenerConfig {
         return new ExpiredKeyListener(postViewService);
     }
     
-//    @PostConstruct
-//    public void enableKeyspaceNotifications() {
-//        RedisConnection conn = null;
-//        try {
-//            conn = connectionFactory.getConnection();
-//            // 'Ex' : E = Keyevent, x = expired 이벤트
-//            conn.setConfig("notify-keyspace-events", "Ex");
-//        } finally {
-//            if (conn != null) {
-//                conn.close();
-//            }
-//        }
-//    }
+    @PostConstruct
+    public void enableKeyspaceNotifications() {
+        RedisConnection conn = null;
+        try {
+            conn = connectionFactory.getConnection();
+            // 'Ex' : E = Keyevent, x = expired 이벤트
+            conn.setConfig("notify-keyspace-events", "Ex");
+        } finally {
+            if (conn != null) {
+                conn.close();
+            }
+        }
+    }
     
     private class ExpiredKeyListener implements MessageListener {
         private final PostViewService postViewService;
