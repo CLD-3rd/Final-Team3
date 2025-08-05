@@ -22,33 +22,13 @@ public class RedisConfig {
     @Value("${spring.data.redis.password}") 
     String password;
 
-    @Value("${spring.redis.ssl.enabled:false}") 
-    boolean sslEnabled;
-
+    
     @Bean
     public LettuceConnectionFactory redisConnectionFactory() {
     	RedisStandaloneConfiguration config = new RedisStandaloneConfiguration(host, port);
         config.setPassword(password);
-        LettuceClientConfiguration.LettuceClientConfigurationBuilder builder =
-                LettuceClientConfiguration.builder()
-                    .commandTimeout(Duration.ofMillis(
-                       Integer.parseInt(System.getProperty("spring.data.redis.timeout", "2000"))
-                    ));
-
-            if (sslEnabled) {
-                builder.useSsl()
-                       .disablePeerVerification();
-            }
-
-			return new LettuceConnectionFactory(config, builder.build());
+        return new LettuceConnectionFactory(config);
     }
-    
-    // @Bean
-    // public LettuceConnectionFactory redisConnectionFactory() {
-    // 	RedisStandaloneConfiguration config = new RedisStandaloneConfiguration(host, port);
-    //     config.setPassword(password);
-    //     return new LettuceConnectionFactory(config);
-    // }
 
     @Bean
     public RedisTemplate<String, Object> redisTemplate() {
