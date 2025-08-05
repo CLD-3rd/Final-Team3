@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisPassword;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
-// import org.springframework.data.redis.connection.lettuce.LettuceClientConfiguration;
+import org.springframework.data.redis.connection.lettuce.LettuceClientConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -30,12 +30,12 @@ public class RedisConfig {
 
     
 
-    @Bean
-    public LettuceConnectionFactory redisConnectionFactory() {
-    	RedisStandaloneConfiguration config = new RedisStandaloneConfiguration(host, port);
-        config.setPassword(password);
-        return new LettuceConnectionFactory(config);
-    }
+    // @Bean
+    // public LettuceConnectionFactory redisConnectionFactory() {
+    // 	RedisStandaloneConfiguration config = new RedisStandaloneConfiguration(host, port);
+    //     config.setPassword(password);
+    //     return new LettuceConnectionFactory(config);
+    // }
 
  //    @Value("${spring.data.redis.ssl:false}")
  //    private boolean sslEnabled;
@@ -46,34 +46,38 @@ public class RedisConfig {
  //        this.redisProperties = redisProperties;
  //    }
     
-    // @Bean
-    // public LettuceConnectionFactory redisConnectionFactory() {
+    @Bean
+    public LettuceConnectionFactory redisConnectionFactory() {
     	
     	
-    // 	// 1) Standalone 설정
-    //     RedisStandaloneConfiguration standaloneConfig = new RedisStandaloneConfiguration();
-    //     standaloneConfig.setHostName(redisProperties.getHost());
-    //     standaloneConfig.setPort(redisProperties.getPort());
-    //     if (StringUtils.hasText(redisProperties.getPassword())) {
-    //         standaloneConfig.setPassword(RedisPassword.of(redisProperties.getPassword()));
-    //     }
+    	// 1) Standalone 설정
+        RedisStandaloneConfiguration standaloneConfig = new RedisStandaloneConfiguration(host, port);
+        // standaloneConfig.setHostName(redisProperties.getHost());
+        // standaloneConfig.setPort(redisProperties.getPort());
+        // if (StringUtils.hasText(redisProperties.getPassword())) {
+        //     standaloneConfig.setPassword(RedisPassword.of(redisProperties.getPassword()));
+        // }
+        standaloneConfig.setPassword(RedisPassword.of(password));
 
-    //     // 2) Lettuce 클라이언트 설정 분기
-    //     LettuceClientConfiguration.LettuceClientConfigurationBuilder clientBuilder =
-    //         LettuceClientConfiguration.builder()
-    //             .commandTimeout(Duration.ofMillis(redisProperties.getTimeout().toMillis()));
 
-    //     if (sslEnabled) {
-    //         clientBuilder
-    //             .useSsl()                    // SSL/TLS 사용
-    //             .disablePeerVerification();  // 인증서 검증 끌 때 (필요 시)
-    //     }
+        // 2) Lettuce 클라이언트 설정 분기
+        LettuceClientConfiguration clientConfig = LettuceClientConfiguration.builder()
+	        .useSsl()                    // ✅ SSL 사용
+	        .disablePeerVerification()   // 인증서 검증 끌 수 있음 (옵션)
+	        .commandTimeout(Duration.ofMillis(2000))  // Timeout도 설정
+	        .build();
 
-    //     LettuceClientConfiguration clientConfig = clientBuilder.build();
+        // if (sslEnabled) {
+        //     clientBuilder
+        //         .useSsl()                    // SSL/TLS 사용
+        //         .disablePeerVerification();  // 인증서 검증 끌 때 (필요 시)
+        // }
 
-    //     // 3) 팩토리 생성
-    //     return new LettuceConnectionFactory(standaloneConfig, clientConfig);
-    // }
+        LettuceClientConfiguration clientConfig = clientBuilder.build();
+
+        // 3) 팩토리 생성
+        return new LettuceConnectionFactory(standaloneConfig, clientConfig);
+    }
 
     @Bean
     public RedisTemplate<String, Object> redisTemplate() {
