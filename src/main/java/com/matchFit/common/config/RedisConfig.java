@@ -22,6 +22,9 @@ public class RedisConfig {
     @Value("${spring.data.redis.password}") 
     String password;
 
+    @Value("${spring.redis.ssl.enabled:false}") 
+    boolean sslEnabled;
+
     @Bean
     public LettuceConnectionFactory redisConnectionFactory() {
     	RedisStandaloneConfiguration config = new RedisStandaloneConfiguration(host, port);
