@@ -151,8 +151,8 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-northeast-2
 
-      - name: Update kubeconfig for EKS
-        run: aws eks update-kubeconfig --name matchfit-test-eks --region ap-northeast-2
+      # - name: Update kubeconfig for EKS
+      #   run: aws eks update-kubeconfig --name matchfit-test-eks --region ap-northeast-2
         
       - name: Test kubeconfig
         run: kubectl get nodes
