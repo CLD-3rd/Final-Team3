@@ -125,4 +125,4 @@ jobs:
           aws-region: ap-northeast-2
 
       - name: Update kubeconfig for EKS
-        run: aws eks update-kubeconfig --name matchfit-eks --region ap-northeast-2
+        run: aws eks update-kubeconfig --name matchfit-test-eks --region ap-northeast-2
