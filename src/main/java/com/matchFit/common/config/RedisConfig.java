@@ -23,12 +23,12 @@ public class RedisConfig {
     String password;
 
     
-    @Bean
-    public LettuceConnectionFactory redisConnectionFactory() {
-    	RedisStandaloneConfiguration config = new RedisStandaloneConfiguration(host, port);
-        config.setPassword(password);
-        return new LettuceConnectionFactory(config);
-    }
+    // @Bean
+    // public LettuceConnectionFactory redisConnectionFactory() {
+    // 	RedisStandaloneConfiguration config = new RedisStandaloneConfiguration(host, port);
+    //     config.setPassword(password);
+    //     return new LettuceConnectionFactory(config);
+    // }
 
     @Bean
     public RedisTemplate<String, Object> redisTemplate() {
