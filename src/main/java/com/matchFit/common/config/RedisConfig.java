@@ -59,13 +59,12 @@ public class RedisConfig {
         // }
         standaloneConfig.setPassword(RedisPassword.of(password));
 
-
+	
         // 2) Lettuce 클라이언트 설정 분기
-        LettuceClientConfiguration clientConfig = LettuceClientConfiguration.builder()
-	        .useSsl()                    // ✅ SSL 사용
-	        .disablePeerVerification()   // 인증서 검증 끌 수 있음 (옵션)
-	        .commandTimeout(Duration.ofMillis(2000))  // Timeout도 설정
-	        .build();
+        LettuceClientConfiguration.LettuceSslClientConfigurationBuilder clientBuilder =
+        LettuceClientConfiguration.builder().useSsl();	
+	
+
 
         // if (sslEnabled) {
         //     clientBuilder
