@@ -158,8 +158,8 @@ jobs:
         run: kubectl get nodes
 
 
-      - name: Install Helm
-        uses: azure/setup-helm@v3
+      # - name: Install Helm
+      #   uses: azure/setup-helm@v3
 
       # - name: Add & Update Helm repo
       #   run: |
@@ -173,8 +173,8 @@ jobs:
       #       --create-namespace \
       #       --values manifest/base/monitoring/values.yaml
 
-      - name: Apply ArgoCD Application
+      # - name: Apply ArgoCD Application
         # env:
         #   KUBECONFIG: ${{ secrets.KUBECONFIG }}
-        run: |
-          kubectl apply -f manifest/base/monitoring/prometheus.yaml -n argocd
+        # run: |
+        #   kubectl apply -f manifest/base/monitoring/prometheus.yaml -n argocd
