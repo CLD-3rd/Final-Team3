@@ -178,3 +178,4 @@ jobs:
         #   KUBECONFIG: ${{ secrets.KUBECONFIG }}
         # run: |
         #   kubectl apply -f manifest/base/monitoring/prometheus.yaml -n argocd
+
