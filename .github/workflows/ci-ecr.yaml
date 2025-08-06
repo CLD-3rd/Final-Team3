@@ -130,6 +130,9 @@ jobs:
       - name: Update kubeconfig for EKS
         run: aws eks update-kubeconfig --name matchfit-eks --region ap-northeast-2
         
+      - name: Test kubeconfig
+        run: kubectl get nodes
+        
   cd-prometheus:
     # workflow_run 트리거 자체가 CI 성공 후 실행을 보장하므로 needs는 불필요합니다.
     runs-on: ubuntu-latest
@@ -154,8 +157,8 @@ jobs:
       - name: Update kubeconfig for EKS
         run: aws eks update-kubeconfig --name matchfit-eks --region ap-northeast-2
         
-      # - name: Test kubeconfig
-      #   run: kubectl get nodes
+      - name: Test kubeconfig
+        run: kubectl get nodes
 
 
       - name: Install Helm
