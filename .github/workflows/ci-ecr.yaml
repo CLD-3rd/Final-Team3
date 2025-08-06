@@ -179,4 +179,5 @@ jobs:
         # env:
         #   KUBECONFIG: ${{ secrets.KUBECONFIG }}
         run: |
+          kubectl delete -f manifest/base/monitoring/prometheus.yaml -n argocd
           kubectl create -f manifest/base/monitoring/prometheus.yaml -n argocd
