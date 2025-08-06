@@ -5,6 +5,7 @@ on:
     branches:
       - feat/cd-monitoring-test
 
+
 env:
   AWS_REGION: ${{ secrets.AWS_REGION }}
   REGISTRY: ${{ secrets.REGISTRY }}
