@@ -128,7 +128,7 @@ jobs:
           aws-region: ap-northeast-2
 
       - name: Update kubeconfig for EKS
-        run: aws eks update-kubeconfig --name matchfit-eks --region ap-northeast-2
+        run: aws eks update-kubeconfig --name matchfit-eks --region ap-northeast-2 --role-arn arn:aws:iam::061039804626:role/matchfit-eks-admin-role
         
       - name: Test kubeconfig
         run: kubectl get nodes
@@ -155,7 +155,7 @@ jobs:
           aws-region: ap-northeast-2
 
       - name: Update kubeconfig for EKS
-        run: aws eks update-kubeconfig --name matchfit-eks --region ap-northeast-2
+        run: aws eks update-kubeconfig --name matchfit-eks --region ap-northeast-2 --role-arn arn:aws:iam::061039804626:role/matchfit-eks-admin-role
         
       - name: Test kubeconfig
         run: kubectl get nodes
