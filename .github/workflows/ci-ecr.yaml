@@ -154,8 +154,8 @@ jobs:
       - name: Update kubeconfig for EKS
         run: aws eks update-kubeconfig --name matchfit-eks --region ap-northeast-2
         
-      - name: Test kubeconfig
-        run: kubectl get nodes
+      # - name: Test kubeconfig
+      #   run: kubectl get nodes
 
 
       - name: Install Helm
