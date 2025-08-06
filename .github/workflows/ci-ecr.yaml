@@ -10,7 +10,6 @@ env:
   REGISTRY: ${{ secrets.REGISTRY }}
   REPO: ${{ secrets.REPO }}
 
-
 jobs:
   ci:
     runs-on: ubuntu-latest
