@@ -66,7 +66,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:3000")); // 리액트 주소
+        config.setAllowedOrigins(List.of("http://localhost:3000", "https://www.match-fit.store", "https://d9zpjbpi7h7vq.cloudfront.net")); // 리액트 주소, cloudfront 주소
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
