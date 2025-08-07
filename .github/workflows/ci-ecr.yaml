@@ -168,8 +168,9 @@ jobs:
 
       - name: Deploy Prometheus stack
         run: |
-          helm install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
+          helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
           --namespace monitoring --create-namespace
+          
 
       # - name: Apply ArgoCD Application
         # env:
