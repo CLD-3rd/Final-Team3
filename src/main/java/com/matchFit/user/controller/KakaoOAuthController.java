@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -62,7 +63,7 @@ public class KakaoOAuthController {
             String email = getKakaoEmail(code, kakaoSignupRedirectUri);
             System.out.println("=== 카카오 회원가입 콜백 성공! 이메일: " + email + " ===");
             // 수정한 부분 -> 이래야 프론트 회원가입 페이지로 리다이렉트됨.
-            return "redirect:http://localhost:3000/signup?kakaoEmail=" + email;
+            return "redirect:https://www.match-fit.store/signup/index.html?kakaoEmail=" + email;
         } catch (Exception e) {
             System.out.println("=== 카카오 회원가입 콜백 실패: " + e.getMessage() + " ===");
             e.printStackTrace();
@@ -80,12 +81,14 @@ public class KakaoOAuthController {
 
             if (user != null) {
                 // 기존 사용자 - JWT 토큰 생성하여 로그인 페이지로 리다이렉트
-                String jwt = jwtProvider.createToken(user.getId(), user.getEmail());
-                return "redirect:http://localhost:3000/login?kakaoToken=" + jwt;
+                String jwt = jwtProvider.createToken(user.getId(), user.getEmail());            
+                
+                  //return "redirect:http://localhost:3000/login?kakaoToken=" + jwt;
+                 return "redirect:https://www.match-fit.store/login/index.html?kakaoToken=" + jwt;
             } else {
                 // 신규 사용자 - 회원가입 페이지로 리다이렉트
                 System.out.println("=== 신규 사용자, 회원가입으로 이동: " + email + " ===");
-                return "redirect:http://localhost:3000/signup?kakaoEmail=" + email;
+                return "redirect:https://www.match-fit.store/signup/index.html?kakaoEmail=" + email;
             }
         } catch (Exception e) {
             System.out.println("=== 카카오 로그인 콜백 실패: " + e.getMessage() + " ===");
