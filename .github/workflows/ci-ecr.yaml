@@ -1,14 +1,14 @@
 name: CI - Build and Deploy via ECR
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - feat/cd-monitoring-externaldns
 
 env:
   AWS_REGION: ${{ secrets.AWS_REGION }}
   REGISTRY: ${{ secrets.REGISTRY }}
   REPO: ${{ secrets.REPO }}
-
-
 
 jobs:
   ci:
@@ -98,7 +98,7 @@ jobs:
         with:
           repository: CLD-3rd/Final-Team3-manifests
           token: ${{ secrets.GH_TOKEN }}
-          ref: test
+          ref: develop
           path: manifest
 
       - name: Install kustomize
@@ -116,7 +116,7 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add .
           git commit -m "Update image tag to ${{ env.SHORT_SHA }}" || echo "No changes to commit"
-          git push origin test
+          git push origin develop
       - name: Set up kubeconfig
         uses: aws-actions/configure-aws-credentials@v2
         with:
@@ -125,4 +125,54 @@ jobs:
           aws-region: ap-northeast-2
 
       - name: Update kubeconfig for EKS
-        run: aws eks update-kubeconfig --name matchfit-eks --region ap-northeast-2
+        run: aws eks update-kubeconfig --name matchfit-eks --region ap-northeast-2 --role-arn arn:aws:iam::061039804626:role/matchfit-eks-admin-role
+        
+      - name: Test kubeconfig
+        run: kubectl get nodes
+        
+  cd-prometheus:
+    # workflow_run 트리거 자체가 CI 성공 후 실행을 보장하므로 needs는 불필요합니다.
+    runs-on: ubuntu-latest
+    needs: cd
+    
+    steps:
+      - name: Checkout manifest repository
+        uses: actions/checkout@v4
+        with:
+          repository: CLD-3rd/Final-Team3-manifests
+          token: ${{ secrets.GH_TOKEN }}
+          ref: develop
+          path: manifest
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-northeast-2
+
+      - name: Update kubeconfig for EKS
+        run: aws eks update-kubeconfig --name matchfit-eks --region ap-northeast-2 --role-arn arn:aws:iam::061039804626:role/matchfit-eks-admin-role
+        
+      - name: Test kubeconfig
+        run: kubectl get nodes
+
+
+      - name: Install Helm
+        uses: azure/setup-helm@v3
+
+      - name: Add & Update Helm repo
+        run: |
+          helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+          helm repo update
+
+      - name: Deploy Prometheus stack
+        run: |
+          helm install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
+          --namespace monitoring --create-namespace
+
+      # - name: Apply ArgoCD Application
+        # env:
+        #   KUBECONFIG: ${{ secrets.KUBECONFIG }}
+        # run: |
+        #   kubectl apply -f manifest/base/monitoring/prometheus.yaml -n argocd
