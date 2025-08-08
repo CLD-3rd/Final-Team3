@@ -128,9 +128,6 @@ jobs:
       - name: Update kubeconfig for EKS
         run: aws eks update-kubeconfig --name matchfit-eks --region ap-northeast-2 --role-arn arn:aws:iam::061039804626:role/matchfit-eks-admin-role
         
-      - name: Test kubeconfig
-        run: kubectl get nodes
-        
   cd-prometheus:
     # workflow_run 트리거 자체가 CI 성공 후 실행을 보장하므로 needs는 불필요합니다.
     runs-on: ubuntu-latest
@@ -154,27 +151,30 @@ jobs:
 
       - name: Update kubeconfig for EKS
         run: aws eks update-kubeconfig --name matchfit-eks --region ap-northeast-2 --role-arn arn:aws:iam::061039804626:role/matchfit-eks-admin-role
-        
-      - name: Test kubeconfig
-        run: kubectl get nodes
 
 
       - name: Install Helm
         uses: azure/setup-helm@v3
 
-      # - name: Add & Update Helm repo
-      #   run: |
-      #     helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-      #     helm repo update
+        
 
-      # - name: Deploy Prometheus stack
-      #   run: |
-      #     helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
-      #     --namespace monitoring --create-namespace \
-      #     --values manifest/base/monitoring/grafana-values.yaml
+      - name: Add & Update Helm repo
+        run: |
+          helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+          helm repo update
 
-      # - name: Apply ArgoCD Application
-        # env:
-        #   KUBECONFIG: ${{ secrets.KUBECONFIG }}
-        # run: |
-        #   kubectl apply -f manifest/base/monitoring/prometheus.yaml -n argocd
+      - name: Check if Prometheus is already installed
+        id: check-prometheus
+        run: |
+          if helm list -n monitoring | grep kube-prometheus-stack; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Deploy Prometheus stack (if not exists)
+        if: steps.check-prometheus.outputs.exists == 'false'
+        run: |
+          helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
+            --namespace monitoring --create-namespace \
+            --values manifest/base/monitoring/grafana-values.yaml
