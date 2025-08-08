@@ -167,8 +167,8 @@ jobs:
       - name: Deploy Prometheus stack
         run: |
           helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
-          --namespace monitoring --create-namespace
-          
+          --namespace monitoring --create-namespace \
+          --values manifest/base/monitoring/grafana-values.yaml
 
       # - name: Apply ArgoCD Application
         # env:
