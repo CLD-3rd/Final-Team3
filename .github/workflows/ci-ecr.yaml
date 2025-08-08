@@ -1,9 +1,7 @@
 name: CI - Build and Deploy via ECR
 
 on:
-  push:
-    branches:
-      - feat/cd-monitoring-externaldns
+  workflow_dispatch:
 
 env:
   AWS_REGION: ${{ secrets.AWS_REGION }}
