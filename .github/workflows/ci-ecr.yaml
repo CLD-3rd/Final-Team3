@@ -41,6 +41,9 @@ jobs:
 #           echo "${{ secrets.PROPERTIES }}" | base64 --decode > ./src/main/resources/application.properties
         shell: bash
 
+      - name: Show application.properties
+        run: cat ./src/main/resources/application.properties
+
       - name: Build with Maven
         run: mvn -B -DskipTests package --file pom.xml
 
