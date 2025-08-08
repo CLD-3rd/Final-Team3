@@ -162,16 +162,16 @@ jobs:
       - name: Install Helm
         uses: azure/setup-helm@v3
 
-      - name: Add & Update Helm repo
-        run: |
-          helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-          helm repo update
+      # - name: Add & Update Helm repo
+      #   run: |
+      #     helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+      #     helm repo update
 
-      - name: Deploy Prometheus stack
-        run: |
-          helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
-          --namespace monitoring --create-namespace \
-          --values manifest/base/monitoring/grafana-values.yaml
+      # - name: Deploy Prometheus stack
+      #   run: |
+      #     helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
+      #     --namespace monitoring --create-namespace \
+      #     --values manifest/base/monitoring/grafana-values.yaml
 
       # - name: Apply ArgoCD Application
         # env:
