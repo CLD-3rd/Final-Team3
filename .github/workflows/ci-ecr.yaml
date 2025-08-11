@@ -127,6 +127,11 @@ jobs:
 
       - name: Update kubeconfig for EKS
         run: aws eks update-kubeconfig --name matchfit-eks --region ap-northeast-2 --role-arn arn:aws:iam::061039804626:role/matchfit-eks-admin-role
+
+      # 여기 추가
+      - name: Apply root ArgoCD Application
+        run: |
+          kubectl apply -f manifest/root-app.yaml -n argocd
         
   cd-prometheus:
     # workflow_run 트리거 자체가 CI 성공 후 실행을 보장하므로 needs는 불필요합니다.
@@ -152,12 +157,9 @@ jobs:
       - name: Update kubeconfig for EKS
         run: aws eks update-kubeconfig --name matchfit-eks --region ap-northeast-2 --role-arn arn:aws:iam::061039804626:role/matchfit-eks-admin-role
 
-
       - name: Install Helm
         uses: azure/setup-helm@v3
-
         
-
       - name: Add & Update Helm repo
         run: |
           helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
