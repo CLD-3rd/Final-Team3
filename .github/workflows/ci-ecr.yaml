@@ -139,7 +139,7 @@ jobs:
         with:
           repository: CLD-3rd/Final-Team3-manifests
           token: ${{ secrets.GH_TOKEN }}
-          ref: feat/hpa
+          ref: develop
           path: manifest
 
       - name: Configure AWS credentials
