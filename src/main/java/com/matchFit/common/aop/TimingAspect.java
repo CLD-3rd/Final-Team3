@@ -22,6 +22,7 @@ public class TimingAspect {
     // pointcut: 서비스 패키지의 public 메서드만 타이밍 (패키지명은 네 프로젝트에 맞게 변경)
     @Around("execution(public * com.matchFit..service..*(..))")
     public Object timeServiceMethods(ProceedingJoinPoint pjp) throws Throwable {
+    	System.out.println("[TimingAspect] Entering method: " + pjp.getSignature());
         MethodSignature signature = (MethodSignature) pjp.getSignature();
         String className = signature.getDeclaringType().getSimpleName();
         String methodName = signature.getName();
