@@ -132,26 +132,60 @@ public class ParticipationService {
         Participation participation = participationRepository
             .findByPostIdAndUserId(postId, dto.getApplicantId());
 
+//        if (dto.getDecision() == Decision.ACCEPT) {
+//            participation.setStatus(ApplicationStatus.APPROVED);
+//
+//            // 현재 승인된 인원 수 확인
+//            int approvedCount = participationRepository.countByPost_IdAndStatus(postId, ApplicationStatus.APPROVED);
+//
+//            // 승인 완료 처리로 인해 인원이 찼다면 마감 처리
+//            if (approvedCount + 1 >= post.getMaxPeople()) {
+//                post.setStatus(com.matchFit.post.entity.Status.CLOSED);
+//                postRepository.save(post);
+//                participationRepository.flush(); 
+//            }
+//
+//        } else {
+//            participation.setStatus(ApplicationStatus.REJECTED);
+//        }
+//      return new DecisionApplicant(
+//            participation.getUser().getId(),
+//            participation.getUser().getNickname(),
+//            participation.getStatus());
+      
         if (dto.getDecision() == Decision.ACCEPT) {
-            participation.setStatus(ApplicationStatus.APPROVED);
+          // 이미 승인된 경우 중복 승인 방지
+          if (participation.getStatus() == ApplicationStatus.APPROVED) {
+              return new DecisionApplicant(
+                      participation.getUser().getId(),
+                      participation.getUser().getNickname(),
+                      participation.getStatus()
+              );
+          }
 
-            // 현재 승인된 인원 수 확인
-            int approvedCount = participationRepository.countByPost_IdAndStatus(postId, ApplicationStatus.APPROVED);
+          participation.setStatus(ApplicationStatus.APPROVED);
+          participationRepository.saveAndFlush(participation); // 변경을 DB에 먼저 반영
 
-            // 승인 완료 처리로 인해 인원이 찼다면 마감 처리
-            if (approvedCount + 1 >= post.getMaxPeople()) {
-                post.setStatus(com.matchFit.post.entity.Status.CLOSED);
-                postRepository.save(post);
-                participationRepository.flush(); 
-            }
+          // 승인 인원 재집계 (이번 승인자 포함됨)
+          int approvedCount = participationRepository
+                  .countByPost_IdAndStatus(postId, ApplicationStatus.APPROVED);
 
-        } else {
-            participation.setStatus(ApplicationStatus.REJECTED);
-        }
+          if (approvedCount >= post.getMaxPeople()) {
+              if (post.getStatus() != com.matchFit.post.entity.Status.CLOSED) {
+                  post.setStatus(com.matchFit.post.entity.Status.CLOSED);
+                  postRepository.save(post);
+              }
+          }
+      } else {
+          participation.setStatus(ApplicationStatus.REJECTED);
+          participationRepository.save(participation);
+      }
+
       return new DecisionApplicant(
-            participation.getUser().getId(),
-            participation.getUser().getNickname(),
-            participation.getStatus());
+              participation.getUser().getId(),
+              participation.getUser().getNickname(),
+              participation.getStatus()
+      );
         
    }
 }
