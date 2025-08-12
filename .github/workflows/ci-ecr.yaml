@@ -99,7 +99,7 @@ jobs:
         with:
           repository: CLD-3rd/Final-Team3-manifests
           token: ${{ secrets.GH_TOKEN }}
-          ref: feat/s3-irsa
+          ref: develop
           path: manifest
 
       - name: Install kustomize
@@ -117,7 +117,7 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add .
           git commit -m "Update image tag to ${{ env.SHORT_SHA }}" || echo "No changes to commit"
-          git push origin feat/s3-irsa
+          git push origin develop
       - name: Set up kubeconfig
         uses: aws-actions/configure-aws-credentials@v2
         with:
@@ -144,7 +144,7 @@ jobs:
         with:
           repository: CLD-3rd/Final-Team3-manifests
           token: ${{ secrets.GH_TOKEN }}
-          ref: feat/s3-irsa
+          ref: develop
           path: manifest
 
       - name: Configure AWS credentials
