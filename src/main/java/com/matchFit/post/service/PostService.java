@@ -5,12 +5,15 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.YearMonth;
 import java.time.temporal.ChronoUnit;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -58,48 +61,55 @@ public class PostService {
     private final PostViewService postViewService;
     private final S3Service s3Service;
     
-    public GetPostsList findByFilters(Sports sports, Gender gender, SortType sortType, LocalDate date) {
-    	// 이전 날짜값이 들어오면 예외 처리
-    	if (date != null) {
-    	    validateNotPastDate(date);
-    	}
+    public GetPostsList findByFilters(Sports sports, Gender gender, SortType sortType, LocalDate date, Pageable pageable) {
+        if (date != null) validateNotPastDate(date);
 
-    	List<Post> posts = postRepository.findByFilters(
-            sports != null ? sports.name() : null, 
-            gender != null ? gender.name() : null, 
-            date
-        );
-    	
-    	// 1) ID 리스트 수집
-    	List<Long> ids = posts.stream()
-                .map(Post::getId)
-                .collect(Collectors.toList());
-    	
-    	// 2) 조회수 맵 조회
-        Map<Long, Long> counts = postViewService.getViewCounts(ids);
-    	
-        // 현재 신청인원 count
-        List<Object[]> approvedCounts = participationRepository.countApprovedByPostIds(ids, ApplicationStatus.APPROVED);
-        Map<Long, Integer> currentPeopleMap = new HashMap<>();
-        for (Object[] row : approvedCounts) {
-            Long postId = (Long) row[0];
-            Long count = (Long) row[1];
-            currentPeopleMap.put(postId, count.intValue());
-        }
-        
-    	if (sortType == SortType.DATE) {
-           posts = sortPostsByDate(posts, sortType);
-    	} else if (sortType == SortType.POPULAR) {
-           posts = sortPostsByPopularity(posts, counts);
-    	} else {
+        String sportsName = sports != null ? sports.name() : null;
+        String genderName = gender != null ? gender.name() : null;
+
+        if (sortType == SortType.DATE) {
+            return findByDateSorted(sportsName, genderName, date, pageable);
+        } else if (sortType == SortType.POPULAR) {
+            return findByPopularitySorted(sportsName, genderName, date, pageable);
+        } else {
             throw new InvalidSortingTypeException();
         }
-        
-		List<GetPost> postDtos = GetPost.from(posts, counts, currentPeopleMap);
-
-        return GetPostsList.of(postDtos);
     }
 
+    private GetPostsList findByDateSorted(String sportsName, String genderName, LocalDate date, Pageable pageable) {
+        Page<Post> page = postRepository.findByFilters(sportsName, genderName, date, pageable);
+
+        List<Long> ids = extractIds(page.getContent());
+        Map<Long, Long> counts = postViewService.getViewCounts(ids);
+        Map<Long, Integer> currentPeople = buildCurrentPeopleMap(ids);
+
+        // 페이지 내에서 추가 가공이 필요하면 여기서 (예: sortPostsByDate), 보통은 DB에서 이미 정렬됨
+        List<GetPost> dtos = GetPost.from(page.getContent(), counts, currentPeople);
+
+        return GetPostsList.of(dtos, page.getNumber(), page.getSize(), page.getTotalElements(), page.getTotalPages());
+    }
+
+    private GetPostsList findByPopularitySorted(String sportsName, String genderName, LocalDate date, Pageable pageable) {
+        // 기존 방식 유지: unpaged로 전부 가져와서 메모리 정렬 후 페이징 (O(N))
+        Page<Post> unpaged = postRepository.findByFilters(sportsName, genderName, date, Pageable.unpaged());
+        List<Post> allPosts = unpaged.getContent();
+
+        List<Long> allIds = extractIds(allPosts);
+        Map<Long, Long> counts = postViewService.getViewCounts(allIds);
+
+        List<Post> sortedPosts = sortPostsByPopularity(allPosts, counts);
+
+        List<Post> pageContent = paginateList(sortedPosts, pageable.getPageNumber(), pageable.getPageSize());
+
+        List<Long> pageIds = extractIds(pageContent);
+        Map<Long, Integer> currentPeople = buildCurrentPeopleMap(pageIds);
+        List<GetPost> dtos = GetPost.from(pageContent, counts, currentPeople);
+
+        int totalPages = (int) Math.ceil((double) sortedPosts.size() / pageable.getPageSize());
+        long totalElements = sortedPosts.size();
+
+        return GetPostsList.of(dtos, pageable.getPageNumber(), pageable.getPageSize(), totalElements, totalPages);
+    }
 
     public GetPostsCalender findByMonth(YearMonth month) {
         validateNotPastMonth(month);
@@ -181,26 +191,6 @@ public class PostService {
         return GetMyPosts.of(myPosts);
     }
 	
-	
-	private List<Post> sortPostsByDate(List<Post> posts, SortType sortType) {
-		return posts.stream()
-                .sorted(Comparator.comparing(
-                    p -> Math.abs(
-                        ChronoUnit.SECONDS.between(p.getDate(), LocalDateTime.now())
-                    )
-                ))
-                .collect(Collectors.toList());
-	}
-	
-	private List<Post> sortPostsByPopularity(List<Post> posts, Map<Long, Long> counts) {
-        // 3) 조회수 내림차순 정렬
-        return posts.stream()
-                    .sorted(Comparator.comparingLong(
-                        p -> counts.getOrDefault(((Post) p).getId(), 0L)
-                    ).reversed())
-                    .collect(Collectors.toList());
-    }
-	
 	// 모집글 수정
 	@Transactional
 	public UpdatePostResponseDto updatePost(Long postId, UpdatePostRequestDto request, MultipartFile image, CustomUserDetails userDetails) {
@@ -270,6 +260,37 @@ public class PostService {
 	    return UpdatePostResponseDto.from(updatedPost);
 	}
 	
+	 // helper to build currentPeopleMap from List<Long> ids
+    private Map<Long, Integer> buildCurrentPeopleMap(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) return Collections.emptyMap();
+        List<Object[]> approvedCounts = participationRepository.countApprovedByPostIds(ids, ApplicationStatus.APPROVED);
+        Map<Long, Integer> currentPeopleMap = new HashMap<>();
+        for (Object[] row : approvedCounts) {
+            Long postId = (Long) row[0];
+            Long count = (Long) row[1];
+            currentPeopleMap.put(postId, count.intValue());
+        }
+        return currentPeopleMap;
+    }
+
+    // sort by proximity to now (closest upcoming first)
+    private List<Post> sortPostsByDate(List<Post> posts) {
+        if (posts == null) return Collections.emptyList();
+        LocalDateTime now = LocalDateTime.now();
+        return posts.stream()
+                .sorted(Comparator.comparingLong(p -> Math.abs(ChronoUnit.SECONDS.between(p.getDate(), now))))
+                .collect(Collectors.toList());
+    }
+    
+    private List<Post> sortPostsByPopularity(List<Post> posts, Map<Long, Long> counts) {
+        // 3) 조회수 내림차순 정렬
+        return posts.stream()
+                    .sorted(Comparator.comparingLong(
+                        p -> counts.getOrDefault(((Post) p).getId(), 0L)
+                    ).reversed())
+                    .collect(Collectors.toList());
+    }
+	
 	private void validateNotPastMonth(YearMonth month) {
         YearMonth currentMonth = YearMonth.now();
         if (month.isBefore(currentMonth)) {
@@ -326,5 +347,15 @@ public class PostService {
     	        )
     	        .sorted(Comparator.comparing(GetPostCalender::getDay))
     	        .collect(Collectors.toList());
+    }
+    
+    private List<Long> extractIds(List<Post> posts) {
+        return posts.stream().map(Post::getId).collect(Collectors.toList());
+    }
+
+    private <T> List<T> paginateList(List<T> list, int pageNum, int pageSize) {
+        int from = Math.min(pageNum * pageSize, list.size());
+        int to = Math.min(from + pageSize, list.size());
+        return list.subList(from, to);
     }
 }

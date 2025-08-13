@@ -3,6 +3,8 @@ package com.matchFit.post.controller;
 import java.time.LocalDate;
 import java.time.YearMonth;
 
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -11,7 +13,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -97,9 +98,10 @@ public class PostController {
         @RequestParam(required = false) Gender gender,
         @RequestParam(required = false, defaultValue = "DATE") SortType sortType,
         @RequestParam(required = false)
-	    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
+	    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+	    @PageableDefault(page = 0, size = 10) Pageable pageable
     ) {
-        GetPostsList postsList = postService.findByFilters(sports, gender, sortType, date);
+        GetPostsList postsList = postService.findByFilters(sports, gender, sortType, date,  pageable);
         return ResponseEntity.ok(ApiResponseDTO.onSuccess(SuccessCode.POST_GET_LIST, postsList));
     }
 	
