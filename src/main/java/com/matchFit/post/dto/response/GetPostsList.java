@@ -11,7 +11,6 @@ public class GetPostsList {
     private final int size;
     private final long totalElements;
     private final int totalPages;
-
     // 페이징 정보 없는 경우
     public GetPostsList(List<GetPost> posts) {
         this.posts = posts;

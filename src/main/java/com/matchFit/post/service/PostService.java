@@ -74,6 +74,7 @@ public class PostService {
         } else {
             throw new InvalidSortingTypeException();
         }
+
     }
 
     private GetPostsList findByDateSorted(String sportsName, String genderName, LocalDate date, Pageable pageable) {
