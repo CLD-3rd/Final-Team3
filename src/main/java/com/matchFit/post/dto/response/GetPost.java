@@ -4,8 +4,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import com.matchFit.participation.entity.ApplicationStatus;
-import com.matchFit.participation.repository.ParticipationRepository;
 import com.matchFit.post.entity.Post;
 
 import lombok.AllArgsConstructor;
