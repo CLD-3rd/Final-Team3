@@ -103,7 +103,7 @@ public class ParticipationService {
         int currentPeople = participationRepository.countByPost_IdAndStatus(
                 post.getId(), 
                 ApplicationStatus.APPROVED
-        );
+        )+1;
         
         return new GetMyPostsParticipationResponseDto(
                 postId,                         
