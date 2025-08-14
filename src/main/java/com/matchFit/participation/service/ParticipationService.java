@@ -168,7 +168,7 @@ public class ParticipationService {
 
           // 승인 인원 재집계 (이번 승인자 포함됨)
           int approvedCount = participationRepository
-                  .countByPost_IdAndStatus(postId, ApplicationStatus.APPROVED);
+                  .countByPost_IdAndStatus(postId, ApplicationStatus.APPROVED)+1;
 
           if (approvedCount >= post.getMaxPeople()) {
               if (post.getStatus() != com.matchFit.post.entity.Status.CLOSED) {
