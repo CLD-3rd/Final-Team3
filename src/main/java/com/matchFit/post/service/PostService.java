@@ -157,7 +157,7 @@ public class PostService {
 		Post post = postRepository.findById(postId)
 				.orElseThrow(()-> new PostNotFoundException());
 
-		int currentParticipantsCount = participationRepository.countByPost_IdAndStatus(postId, ApplicationStatus.APPROVED);
+		int currentParticipantsCount = participationRepository.countByPost_IdAndStatus(postId, ApplicationStatus.APPROVED)+1;
 		
 		if(currentParticipantsCount >= post.getMaxPeople()) {
 			post.setStatus(Status.CLOSED);
@@ -183,7 +183,7 @@ public class PostService {
             		post.getId(), 
                     post.getTitle(),
                     post.getDate(),
-                    participationRepository.countByPost_IdAndStatus(post.getId(),ApplicationStatus.APPROVED),
+                    participationRepository.countByPost_IdAndStatus(post.getId(),ApplicationStatus.APPROVED)+1,
                     post.getMaxPeople(),
                     post.getStatus().name()
             ))
@@ -265,10 +265,16 @@ public class PostService {
         if (ids == null || ids.isEmpty()) return Collections.emptyMap();
         List<Object[]> approvedCounts = participationRepository.countApprovedByPostIds(ids, ApplicationStatus.APPROVED);
         Map<Long, Integer> currentPeopleMap = new HashMap<>();
+        
+        // 모든 postId를 1로 초기화 (작성자 포함)
+        for (Long postId : ids) {
+            currentPeopleMap.put(postId, 1);
+        }
+        
         for (Object[] row : approvedCounts) {
             Long postId = (Long) row[0];
             Long count = (Long) row[1];
-            currentPeopleMap.put(postId, count.intValue());
+            currentPeopleMap.put(postId, count.intValue()+1);
         }
         return currentPeopleMap;
     }

@@ -68,7 +68,7 @@ public class FollowService {
                 DateTimeFormatter followedAtFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
                 
                 // 실제 승인된 사용자 수 계산
-                int currentPeople = participationRepository.countByPost_IdAndStatus(post.getId(), ApplicationStatus.APPROVED);
+                int currentPeople = participationRepository.countByPost_IdAndStatus(post.getId(), ApplicationStatus.APPROVED)+1;
                 
                 return new GetMyFollowResponseDto(
                     post.getId(),
