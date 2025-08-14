@@ -1,13 +1,21 @@
 package com.matchFit.user.service;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 
 import com.matchFit.user.dto.request.FindEmailRequest;
+import com.matchFit.user.dto.request.PasswordResetConfirmRequest;
 import com.matchFit.user.dto.response.FindEmailResponse;
+import com.matchFit.user.dto.response.PWMessageResponse;
 import com.matchFit.user.entity.User;
 import com.matchFit.user.repository.UserRepository;
+import com.matchFit.user.token.RedisPasswordResetToken;
 
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -16,7 +24,83 @@ import lombok.RequiredArgsConstructor;
 public class AccountRecoveryService {
 	
 	private final UserRepository userRepository;
+	private final PasswordEncoder passwordEncoder;
+	private final RedisPasswordResetToken tokenStore;
 	
+	private final JavaMailSender mailSender;
+
+    @Value("${spring.mail.username}")
+    private String fromAddress;
+
+    @Value("${app.frontend.reset-password-url}")
+    private String resetUrlBase;
+
+    private void requireNonBlank(String v, String name) {
+        if (v == null || v.trim().isEmpty()) throw new IllegalArgumentException(name + "은(는) 필수입니다.");
+    }
+	
+    // 비밀번호 재설정 링크 요청: req.email 필요 
+    public PWMessageResponse requestReset(PasswordResetConfirmRequest req) {
+        requireNonBlank(req.getEmail(), "email");
+
+        Optional<User> opt = userRepository.findByEmail(req.getEmail());
+        if (opt.isPresent()) {
+            User user = opt.get();
+            String token = tokenStore.issueToken(user.getId());
+            sendPasswordResetMail(user.getEmail(), token);
+        }
+        // 존재여부 비노출
+        return new PWMessageResponse("Password reset link sent.");
+    }
+
+    // 비밀번호 재설정 확정: req.token + req.newPassword 필요 
+    public PWMessageResponse confirmReset(PasswordResetConfirmRequest req) {
+        requireNonBlank(req.getToken(), "token");
+        requireNonBlank(req.getNewPassword(), "newPassword");
+        if (req.getNewPassword().length() < 8)
+            throw new IllegalArgumentException("비밀번호는 최소 8자 이상이어야 합니다.");
+
+        Long userId = tokenStore.consumeToken(req.getToken());
+        if (userId == null) throw new IllegalArgumentException("유효하지 않거나 만료된 토큰입니다.");
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("계정을 찾을 수 없습니다."));
+        
+        // 새 비밀번호가 기존 비밀번호와 일치하는지 판단
+        if (passwordEncoder.matches(req.getNewPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("이전과 동일한 비밀번호는 사용할 수 없습니다.");
+        }
+
+        
+        user.setPassword(passwordEncoder.encode(req.getNewPassword()));
+        return new PWMessageResponse("Password updated.");
+    }
+
+    //  내부 메일 발송 유틸 
+    private void sendPasswordResetMail(String to, String token) {
+        String link = resetUrlBase + token;
+        String subject = "[MatchFit] 비밀번호 재설정 안내";
+        String body = """
+            안녕하세요.
+
+            비밀번호 재설정을 요청하셨다면 아래 링크를 클릭하세요.
+        
+
+            %s
+
+   
+            """.formatted(link);
+
+        SimpleMailMessage msg = new SimpleMailMessage();
+        msg.setFrom(fromAddress);  
+        msg.setTo(to);
+        msg.setSubject(subject);
+        msg.setText(body);
+        mailSender.send(msg);
+    }
+    
+	
+	// 이메일 찾기
 	private String maskEmail(String email) {
         if (email == null) return null;
         int at = email.indexOf('@');
@@ -29,11 +113,6 @@ public class AccountRecoveryService {
         return visible + stars + domain;
     }
 	
-	private void requireNonBlank(String value, String fieldName) {
-	       if (value == null || value.trim().isEmpty()) {
-	           throw new IllegalArgumentException(fieldName + "은(는) 필수입니다.");
-	       }
-	   }
 	
 	@Transactional(readOnly = true)
 	public FindEmailResponse findEmail(FindEmailRequest req) {
@@ -42,8 +121,5 @@ public class AccountRecoveryService {
 	    User user = userRepository.findByNickname(req.getNickname())
 	            .orElseThrow(() -> new IllegalArgumentException("일치하는 계정이 없습니다."));
 	    return new FindEmailResponse(maskEmail(user.getEmail()));
-	}
-	
-	
-	
+	}	
 }

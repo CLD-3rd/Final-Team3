@@ -17,8 +17,10 @@ import com.matchFit.common.code.SuccessCode;
 import com.matchFit.common.dto.response.ApiResponseDTO;
 import com.matchFit.post.entity.Sports;
 import com.matchFit.user.dto.request.FindEmailRequest;
+import com.matchFit.user.dto.request.PasswordResetConfirmRequest;
 import com.matchFit.user.dto.request.SignUpRequest;
 import com.matchFit.user.dto.response.FindEmailResponse;
+import com.matchFit.user.dto.response.PWMessageResponse;
 import com.matchFit.user.entity.Gender;
 import com.matchFit.user.entity.User;
 import com.matchFit.user.exception.EmailAlreadyExistException;
@@ -167,9 +169,15 @@ public class AuthController {
     	return ResponseEntity.ok(accountRecoveryService.findEmail(findEmailRequest));
     }
     
+    @PostMapping("/request-password")
+    public ResponseEntity<PWMessageResponse> request(@RequestBody PasswordResetConfirmRequest req){
+    	return ResponseEntity.ok(accountRecoveryService.requestReset(req));
+    }
     
-    
-    
+    @PostMapping("/confirm-password")
+    public ResponseEntity<PWMessageResponse> confirm(@RequestBody PasswordResetConfirmRequest req) {
+        return ResponseEntity.ok(accountRecoveryService.confirmReset(req));
+    }
     
     
     

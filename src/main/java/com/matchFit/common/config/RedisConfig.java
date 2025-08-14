@@ -73,7 +73,7 @@ public class RedisConfig {
         // }
 
         LettuceClientConfiguration clientConfig = clientBuilder.build();
-
+       
         // 3) 팩토리 생성
         return new LettuceConnectionFactory(standaloneConfig, clientConfig);
     }
