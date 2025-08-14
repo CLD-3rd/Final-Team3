@@ -16,7 +16,9 @@ import org.springframework.web.servlet.ModelAndView;
 import com.matchFit.common.code.SuccessCode;
 import com.matchFit.common.dto.response.ApiResponseDTO;
 import com.matchFit.post.entity.Sports;
+import com.matchFit.user.dto.request.FindEmailRequest;
 import com.matchFit.user.dto.request.SignUpRequest;
+import com.matchFit.user.dto.response.FindEmailResponse;
 import com.matchFit.user.entity.Gender;
 import com.matchFit.user.entity.User;
 import com.matchFit.user.exception.EmailAlreadyExistException;
@@ -28,11 +30,18 @@ import com.matchFit.user.exception.SportsInvalidException;
 import com.matchFit.user.exception.UserNotFoundException;
 import com.matchFit.user.jwt.JwtProvider;
 import com.matchFit.user.repository.UserRepository;
+import com.matchFit.user.service.AccountRecoveryService;
 
+import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
+
+@RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/user")
 public class AuthController {
-
+	
+	private final AccountRecoveryService accountRecoveryService;
+	
     @Autowired
     private UserRepository userRepository;
 
@@ -151,5 +160,18 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponseDTO.onSuccess(SuccessCode.USER_LOGIN_SUCCESS, Collections.singletonMap("token", jwt)));
         
     }
+    
+    
+    @PostMapping("/find-email")
+    public ResponseEntity <FindEmailResponse> findEmail(@RequestBody FindEmailRequest findEmailRequest) {
+    	return ResponseEntity.ok(accountRecoveryService.findEmail(findEmailRequest));
+    }
+    
+    
+    
+    
+    
+    
+    
     
 }
