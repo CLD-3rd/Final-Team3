@@ -14,6 +14,7 @@ import com.matchFit.participation.dto.response.DecisionApplicant;
 import com.matchFit.participation.dto.response.GetMyPostsParticipationResponseDto;
 import com.matchFit.participation.entity.ApplicationStatus;
 import com.matchFit.participation.entity.Participation;
+import com.matchFit.participation.exception.ParticipationAlreadyApprovedException;
 import com.matchFit.participation.repository.ParticipationRepository;
 import com.matchFit.post.dto.response.GetMyPostApplicant;
 import com.matchFit.post.dto.response.GetMyPostApplicants;
@@ -23,6 +24,7 @@ import com.matchFit.post.exception.PostNotFoundException;
 import com.matchFit.post.exception.UnauthorizedUserException;
 import com.matchFit.post.repository.PostRepository;
 import com.matchFit.user.entity.User;
+import com.matchFit.user.exception.UserNotFoundException;
 import com.matchFit.user.repository.UserRepository;
 import com.matchFit.user.security.CustomUserDetails;
 
@@ -62,6 +64,27 @@ public class ParticipationService {
       
    }
 
+   // 모집 글 신청 취소
+   @Transactional
+   public void cancelApplyPost(Long postId, Long userId) {
+       User user = userRepository.findById(userId)
+               .orElseThrow(() -> new UserNotFoundException());
+               
+       Post post = postRepository.findById(postId)
+               .orElseThrow(() -> new PostNotFoundException());
+       
+       Participation participation = participationRepository.findByPostIdAndUserId(postId, userId);
+       
+       // 이미 승인된 경우 취소 불가
+       if (participation.getStatus() == ApplicationStatus.APPROVED) {
+           throw new ParticipationAlreadyApprovedException();
+       }
+       
+       // 신청 삭제
+       participationRepository.delete(participation);
+   }
+   
+   
    // 신청자 목록 조회
    public GetMyPostApplicants getApplicantsByPost(Long postId, CustomUserDetails userDetails) {
         Post post = postRepository.findById(postId)

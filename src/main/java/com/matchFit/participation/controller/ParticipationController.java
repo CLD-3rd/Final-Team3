@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -48,4 +49,15 @@ public class ParticipationController {
 		DecisionApplicant response = participationService.manageApplicant(postId, dto, userDetails);
 		return ResponseEntity.ok(ApiResponseDTO.onSuccess(SuccessCode.PARTICIPATION_MANAGED, response));
 	}
+    
+    @DeleteMapping("/{postId}/apply")
+    public ResponseEntity<ApiResponseDTO<Object>> cancelApplyPost(
+            @PathVariable Long postId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        
+        Long userId = userDetails.getUser().getId();
+        participationService.cancelApplyPost(postId, userId);
+        
+        return ResponseEntity.ok(ApiResponseDTO.onSuccess(SuccessCode.POST_CANCEL_APPLY, null));
+    }
 }

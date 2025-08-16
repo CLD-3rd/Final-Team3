@@ -18,6 +18,10 @@ public enum ErrorCode {
 	POST_PAST_MONTHS("POST405", "과거 달에 게시글을 조회할 수 없습니다.", HttpStatus.BAD_REQUEST),
 	
 	
+	// PARTICIPATION
+	PARTICIPATION_ALREADY_APPROVED("PARTICIPATION400", "이미 승인된 신청은 취소할 수 없습니다.", HttpStatus.BAD_REQUEST),
+
+	
 	// USER
 	EMAIL_DUPLICATION("USER400", "이미 사용중인 이메일입니다.", HttpStatus.BAD_REQUEST), 
 	NICKNAME_DUPLICATION("USER401", "이미 사용중인 닉네임입니다.", HttpStatus.BAD_REQUEST),
@@ -26,6 +30,8 @@ public enum ErrorCode {
 	USER_NOT_FOUND("USER404", "존재하지 않는 사용자입니다.", HttpStatus.NOT_FOUND),
 	PASSWORD_INVALID("USER405", "유효하지 않은 비밀번호입니다.", HttpStatus.BAD_REQUEST),
 	KAKAO_LOGIN_FAILED("USER405", "카카오 계정으로 로그인한 사용자입니다. 일반 로그인은 불가능합니다.", HttpStatus.UNAUTHORIZED);
+	
+	
 	
 	private final String code;
     private final String message;
