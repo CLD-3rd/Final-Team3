@@ -78,8 +78,11 @@ public class ParticipationService {
        // 경기 하루 전부터는 취소 불가
        LocalDateTime now = LocalDateTime.now();
        LocalDateTime eventTime = post.getDate();
-       
-       if (now.isAfter(eventTime.minusDays(1))) {
+
+       // 경기 전날 00:00부터 제한
+       LocalDateTime cutoffTime = eventTime.toLocalDate().minusDays(1).atStartOfDay();
+
+       if (now.isAfter(cutoffTime)) {
            throw new ParticipationCancellationTimeExceededException();
        }
        
