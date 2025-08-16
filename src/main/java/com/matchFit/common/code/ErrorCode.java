@@ -19,7 +19,7 @@ public enum ErrorCode {
 	
 	
 	// PARTICIPATION
-	PARTICIPATION_ALREADY_APPROVED("PARTICIPATION400", "이미 승인된 신청은 취소할 수 없습니다.", HttpStatus.BAD_REQUEST),
+	PARTICIPATION_CANCELLATION_TIME_EXCEEDED("PARTICIPATION400", "경기 하루 전부터는 취소할 수 없습니다.", HttpStatus.BAD_REQUEST),
 
 	
 	// USER

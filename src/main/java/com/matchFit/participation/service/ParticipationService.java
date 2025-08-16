@@ -14,7 +14,7 @@ import com.matchFit.participation.dto.response.DecisionApplicant;
 import com.matchFit.participation.dto.response.GetMyPostsParticipationResponseDto;
 import com.matchFit.participation.entity.ApplicationStatus;
 import com.matchFit.participation.entity.Participation;
-import com.matchFit.participation.exception.ParticipationAlreadyApprovedException;
+import com.matchFit.participation.exception.ParticipationCancellationTimeExceededException;
 import com.matchFit.participation.repository.ParticipationRepository;
 import com.matchFit.post.dto.response.GetMyPostApplicant;
 import com.matchFit.post.dto.response.GetMyPostApplicants;
@@ -75,13 +75,29 @@ public class ParticipationService {
        
        Participation participation = participationRepository.findByPostIdAndUserId(postId, userId);
        
-       // 이미 승인된 경우 취소 불가
-       if (participation.getStatus() == ApplicationStatus.APPROVED) {
-           throw new ParticipationAlreadyApprovedException();
+       // 경기 하루 전부터는 취소 불가
+       LocalDateTime now = LocalDateTime.now();
+       LocalDateTime eventTime = post.getDate();
+       
+       if (now.isAfter(eventTime.minusDays(1))) {
+           throw new ParticipationCancellationTimeExceededException();
        }
+       
+       boolean wasApproved = participation.getStatus() == ApplicationStatus.APPROVED;
        
        // 신청 삭제
        participationRepository.delete(participation);
+       
+       // 승인된 참여자가 취소한 경우 post 상태 업데이트
+       if (wasApproved) {
+           int currentApproved = participationRepository.countByPost_IdAndStatus(postId, ApplicationStatus.APPROVED);
+           
+           // 취소로 인해 자리가 생긴 경우 모집 재개
+           if (currentApproved < post.getMaxPeople() && post.getStatus() == Status.CLOSED) {
+               post.setStatus(Status.OPEN);
+               postRepository.save(post);
+           }
+       }
    }
    
    
