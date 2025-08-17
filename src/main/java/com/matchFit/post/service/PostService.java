@@ -365,4 +365,32 @@ public class PostService {
         int to = Math.min(from + pageSize, list.size());
         return list.subList(from, to);
     }
+    
+    @Transactional
+    public void deleteMyPost(Long postId, CustomUserDetails userDetails) {
+        Long currentUserId = userDetails.getUserId();
+        
+        Post post = postRepository.findById(postId)
+                .orElseThrow(PostNotFoundException::new);
+
+        // 작성자 본인 확인
+        if (!post.getUser().getId().equals(currentUserId)) {
+            throw new UnauthorizedUserException();
+        }
+
+        // 신청 내역 먼저 삭제
+        participationRepository.deleteByPostId(postId);
+        
+        // 찜 내역도 삭제
+        followRepository.deleteByPostId(postId);
+        
+        // 이미지가 S3에 있으면 삭제 (선택)
+        if (post.getImageUrl() != null && !post.getImageUrl().isBlank()) {
+            s3Service.deleteByUrl(post.getImageUrl());
+        }
+
+        // 모집글 삭제
+        postRepository.delete(post);
+    }
+    
 }

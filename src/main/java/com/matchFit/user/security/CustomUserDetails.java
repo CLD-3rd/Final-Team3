@@ -9,6 +9,9 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import com.matchFit.user.entity.User;
 
+import lombok.Getter;
+
+@Getter
 public class CustomUserDetails implements UserDetails {
     private final User user;
 
@@ -39,4 +42,9 @@ public class CustomUserDetails implements UserDetails {
     @Override public boolean isAccountNonLocked() { return true; }
     @Override public boolean isCredentialsNonExpired() { return true; }
     @Override public boolean isEnabled() { return true; }
+    
+    public Long getUserId() {
+        return user != null ? user.getId() : null;
+    }
+    
 }
