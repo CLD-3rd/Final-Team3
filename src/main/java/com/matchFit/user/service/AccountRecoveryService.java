@@ -61,8 +61,10 @@ public class AccountRecoveryService {
         if (req.getNewPassword().length() < 8)
             throw new IllegalArgumentException("비밀번호는 최소 8자 이상이어야 합니다.");
 
-        Long userId = tokenStore.consumeToken(req.getToken());
-        if (userId == null) throw new IllegalArgumentException("유효하지 않거나 만료된 토큰입니다.");
+        Long userId = tokenStore.peekUserId(req.getToken());
+        if (userId == null) {
+            throw new IllegalArgumentException("유효하지 않거나 만료된 토큰입니다.");
+        }
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("계정을 찾을 수 없습니다."));
@@ -74,7 +76,10 @@ public class AccountRecoveryService {
 
         
         user.setPassword(passwordEncoder.encode(req.getNewPassword()));
-        //return new PasswordMessageResponse("Password updated.");
+        userRepository.save(user);
+
+        //  여기서만 토큰 소모(또는 used=true로 마킹)
+        tokenStore.consumeToken(req.getToken());
     }
 
     //  내부 메일 발송 유틸 

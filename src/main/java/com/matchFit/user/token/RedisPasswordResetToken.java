@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
+import jakarta.annotation.Nullable;
 import lombok.RequiredArgsConstructor;
 
 import java.security.SecureRandom;
@@ -20,21 +21,39 @@ public class RedisPasswordResetToken {
 
     private static final String PREFIX = "RESET:";
 
+    private String key(String token) {
+        return PREFIX + token;
+    }
+
     public String issueToken(long userId) {
         String token = generateToken();
-        redis.opsForValue().set(PREFIX + token, String.valueOf(userId), Duration.ofMinutes(ttlMinutes));
+        redis.opsForValue().set(key(token), String.valueOf(userId), Duration.ofMinutes(ttlMinutes));
         return token;
     }
 
-    public Long consumeToken(String token) {
-        String key = PREFIX + token;
-        String userId = redis.opsForValue().get(key);
-        if (userId == null) return null;
-        redis.delete(key);
+    // 토큰을 소모하지 않고 userId만 조회 (재시도 허용을 위해 필요)
+    @Nullable
+    public Long peekUserId(String token) {
+        String val = redis.opsForValue().get(key(token));
+        if (val == null) return null;
         try {
-        	return Long.parseLong(userId); 
-        } catch (NumberFormatException e) { 
-        	return null; 
+            return Long.parseLong(val);
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    // 기존 소모 메서드: 성공 시에만 호출
+    @Nullable
+    public Long consumeToken(String token) {
+        String k = key(token);
+        String userId = redis.opsForValue().get(k);
+        if (userId == null) return null;
+        redis.delete(k);
+        try {
+            return Long.parseLong(userId);
+        } catch (NumberFormatException e) {
+            return null;
         }
     }
 
@@ -43,6 +62,5 @@ public class RedisPasswordResetToken {
         new SecureRandom().nextBytes(buf);
         return Base64.getUrlEncoder().withoutPadding().encodeToString(buf);
     }
-	
 	
 }
