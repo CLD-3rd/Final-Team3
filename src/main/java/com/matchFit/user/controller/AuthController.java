@@ -16,7 +16,10 @@ import org.springframework.web.servlet.ModelAndView;
 import com.matchFit.common.code.SuccessCode;
 import com.matchFit.common.dto.response.ApiResponseDTO;
 import com.matchFit.post.entity.Sports;
+import com.matchFit.user.dto.request.FindEmailRequest;
+import com.matchFit.user.dto.request.PasswordResetRequest;
 import com.matchFit.user.dto.request.SignUpRequest;
+import com.matchFit.user.dto.response.FindEmailResponse;
 import com.matchFit.user.entity.Gender;
 import com.matchFit.user.entity.User;
 import com.matchFit.user.exception.EmailAlreadyExistException;
@@ -28,11 +31,18 @@ import com.matchFit.user.exception.SportsInvalidException;
 import com.matchFit.user.exception.UserNotFoundException;
 import com.matchFit.user.jwt.JwtProvider;
 import com.matchFit.user.repository.UserRepository;
+import com.matchFit.user.service.AccountRecoveryService;
 
+import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
+
+@RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/user")
 public class AuthController {
-
+	
+	private final AccountRecoveryService accountRecoveryService;
+	
     @Autowired
     private UserRepository userRepository;
 
@@ -150,6 +160,25 @@ public class AuthController {
         String jwt = jwtProvider.createToken(user.getId(), user.getEmail());
         return ResponseEntity.ok(ApiResponseDTO.onSuccess(SuccessCode.USER_LOGIN_SUCCESS, Collections.singletonMap("token", jwt)));
         
+    }
+    
+       
+    @PostMapping("/find-email")
+    public ResponseEntity<ApiResponseDTO<FindEmailResponse>> findEmail(@RequestBody FindEmailRequest findEmailRequest) {
+        FindEmailResponse response = accountRecoveryService.findEmail(findEmailRequest);
+        return ResponseEntity.ok(ApiResponseDTO.onSuccess(SuccessCode.USER_FIND_MY_EMAIL, response));
+    }
+
+    @PostMapping("/request-password")
+    public ResponseEntity<ApiResponseDTO<Void>> request(@RequestBody PasswordResetRequest req) {
+        accountRecoveryService.requestReset(req);
+        return ResponseEntity.ok(ApiResponseDTO.onSuccess(SuccessCode.USER_REQUEST_PASSWORD_RESET, null));
+    }
+
+    @PostMapping("/confirm-password")
+    public ResponseEntity<ApiResponseDTO<Void>> confirm(@RequestBody PasswordResetRequest req) {
+        accountRecoveryService.confirmReset(req);
+        return ResponseEntity.ok(ApiResponseDTO.onSuccess(SuccessCode.USER_CONFIRMED_PASSWORD_RESET, null));
     }
     
 }
