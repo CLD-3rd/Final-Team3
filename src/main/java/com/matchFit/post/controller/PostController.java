@@ -9,6 +9,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -140,4 +141,13 @@ public class PostController {
         return ResponseEntity.ok(ApiResponseDTO.onSuccess(SuccessCode.POST_UPDATED, response));
 	}
 
+    @DeleteMapping("/{postId}")
+    public ResponseEntity<ApiResponseDTO<Void>> deleteMyPost(
+            @PathVariable Long postId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+
+        postService.deleteMyPost(postId, userDetails);
+        return ResponseEntity.ok(ApiResponseDTO.onSuccess(SuccessCode.POST_DELETED, null));
+    }
+	
 }
