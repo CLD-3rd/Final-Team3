@@ -26,6 +26,7 @@ import com.matchFit.post.dto.PostInfoResponseDto;
 import com.matchFit.post.dto.PostRequestDto;
 import com.matchFit.post.dto.UpdatePostRequestDto;
 import com.matchFit.post.dto.UpdatePostResponseDto;
+import com.matchFit.post.dto.WeatherResponseDto;
 import com.matchFit.post.dto.response.GetMyPost;
 import com.matchFit.post.dto.response.GetMyPosts;
 import com.matchFit.post.dto.response.GetPost;
@@ -60,6 +61,7 @@ public class PostService {
     private final PostRepository postRepository;
     private final PostViewService postViewService;
     private final S3Service s3Service;
+    private final WeatherService weatherService;
     
     public GetPostsList findByFilters(Sports sports, Gender gender, SortType sortType, LocalDate date, Pageable pageable) {
         if (date != null) validateNotPastDate(date);
@@ -126,7 +128,6 @@ public class PostService {
         return GetPostsCalender.of(calendarEntries);
     }
 
-    
 	
 	// 모집 글 생성
     public Post create(PostRequestDto dto, MultipartFile image, @AuthenticationPrincipal CustomUserDetails userDetails) {
@@ -169,8 +170,11 @@ public class PostService {
 		boolean isBookmarked = false; 
 	    if (userId != null) {
 	    	isBookmarked = followRepository.existsByUserIdAndPostId(userId, postId);
-	    }	
-		return new PostInfoResponseDto(post, currentParticipantsCount, isBookmarked);
+	    }
+	    // 날씨 정보 호출
+	    WeatherResponseDto weather = weatherService.getWeatherByDateAndTown(post.getDate().toLocalDate(), post.getTown());
+		
+	    return new PostInfoResponseDto(post, currentParticipantsCount, isBookmarked, weather);
 	}
 	
 	@Transactional(readOnly = true)

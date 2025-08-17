@@ -27,8 +27,9 @@ public class PostInfoResponseDto {
 	private Integer currentPeople; // 따로 구현
 	private boolean isBookmarked;  // 따로 구현
 	private String userEmail;
+	private WeatherResponseDto weather;
 	
-	public PostInfoResponseDto(Post post, int currentPeople, boolean isBookmarked) {
+	public PostInfoResponseDto(Post post, int currentPeople, boolean isBookmarked, WeatherResponseDto weather) {
 		this.id = post.getId();
 		this.title = post.getTitle();
 		this.description = post.getDescription();
@@ -44,6 +45,7 @@ public class PostInfoResponseDto {
 		this.currentPeople = currentPeople;
 		this.isBookmarked = isBookmarked;
 		this.userEmail = post.getUser().getEmail();
+		this.weather = weather;
 		
 	}
 	
