@@ -14,7 +14,6 @@ import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -370,13 +369,13 @@ public class PostService {
     @Transactional
     public void deleteMyPost(Long postId, CustomUserDetails userDetails) {
         Long currentUserId = userDetails.getUserId();
-
+        
         Post post = postRepository.findById(postId)
                 .orElseThrow(PostNotFoundException::new);
 
         // 작성자 본인 확인
         if (!post.getUser().getId().equals(currentUserId)) {
-            throw new AccessDeniedException("본인이 작성한 모집글만 삭제할 수 있습니다.");
+            throw new UnauthorizedUserException();
         }
 
         // 신청 내역 먼저 삭제
