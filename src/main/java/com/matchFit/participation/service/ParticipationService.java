@@ -14,6 +14,7 @@ import com.matchFit.participation.dto.response.DecisionApplicant;
 import com.matchFit.participation.dto.response.GetMyPostsParticipationResponseDto;
 import com.matchFit.participation.entity.ApplicationStatus;
 import com.matchFit.participation.entity.Participation;
+import com.matchFit.participation.exception.ParticipationCancellationTimeExceededException;
 import com.matchFit.participation.repository.ParticipationRepository;
 import com.matchFit.post.dto.response.GetMyPostApplicant;
 import com.matchFit.post.dto.response.GetMyPostApplicants;
@@ -23,6 +24,7 @@ import com.matchFit.post.exception.PostNotFoundException;
 import com.matchFit.post.exception.UnauthorizedUserException;
 import com.matchFit.post.repository.PostRepository;
 import com.matchFit.user.entity.User;
+import com.matchFit.user.exception.UserNotFoundException;
 import com.matchFit.user.repository.UserRepository;
 import com.matchFit.user.security.CustomUserDetails;
 
@@ -62,6 +64,46 @@ public class ParticipationService {
       
    }
 
+   // 모집 글 신청 취소
+   @Transactional
+   public void cancelApplyPost(Long postId, Long userId) {
+       User user = userRepository.findById(userId)
+               .orElseThrow(() -> new UserNotFoundException());
+               
+       Post post = postRepository.findById(postId)
+               .orElseThrow(() -> new PostNotFoundException());
+       
+       Participation participation = participationRepository.findByPostIdAndUserId(postId, userId);
+       
+       // 경기 하루 전부터는 취소 불가
+       LocalDateTime now = LocalDateTime.now();
+       LocalDateTime eventTime = post.getDate();
+
+       // 경기 전날 00:00부터 제한
+       LocalDateTime cutoffTime = eventTime.toLocalDate().minusDays(1).atStartOfDay();
+
+       if (now.isAfter(cutoffTime)) {
+           throw new ParticipationCancellationTimeExceededException();
+       }
+       
+       boolean wasApproved = participation.getStatus() == ApplicationStatus.APPROVED;
+       
+       // 신청 삭제
+       participationRepository.delete(participation);
+       
+       // 승인된 참여자가 취소한 경우 post 상태 업데이트
+       if (wasApproved) {
+           int currentApproved = participationRepository.countByPost_IdAndStatus(postId, ApplicationStatus.APPROVED);
+           
+           // 취소로 인해 자리가 생긴 경우 모집 재개
+           if (currentApproved < post.getMaxPeople() && post.getStatus() == Status.CLOSED) {
+               post.setStatus(Status.OPEN);
+               postRepository.save(post);
+           }
+       }
+   }
+   
+   
    // 신청자 목록 조회
    public GetMyPostApplicants getApplicantsByPost(Long postId, CustomUserDetails userDetails) {
         Post post = postRepository.findById(postId)
