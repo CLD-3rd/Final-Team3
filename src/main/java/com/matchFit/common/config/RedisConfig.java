@@ -3,6 +3,7 @@ package com.matchFit.common.config;
 import java.time.Duration;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisPassword;
@@ -13,9 +14,6 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
-import org.springframework.util.StringUtils;
-
-import java.time.Duration;
 import org.springframework.util.StringUtils;
 
 @Configuration
@@ -30,8 +28,7 @@ public class RedisConfig {
     @Value("${spring.data.redis.password}") 
     String password;
 
-    @Value("${spring.data.redis.ssl.enabled:false}") // 임시
-    private boolean sslEnabled; // 임시
+    
 
     // @Bean
     // public LettuceConnectionFactory redisConnectionFactory() {
@@ -60,12 +57,12 @@ public class RedisConfig {
         // if (StringUtils.hasText(redisProperties.getPassword())) {
         //     standaloneConfig.setPassword(RedisPassword.of(redisProperties.getPassword()));
         // }
-//        standaloneConfig.setPassword(RedisPassword.of(password));  // 임시 주석 처리
+        standaloneConfig.setPassword(RedisPassword.of(password));
 
 	
         // 2) Lettuce 클라이언트 설정 분기
-//        LettuceClientConfiguration.LettuceSslClientConfigurationBuilder clientBuilder =  // 임시 주석 처리
-//        LettuceClientConfiguration.builder().useSsl();  // 임시 주석 처리
+        LettuceClientConfiguration.LettuceSslClientConfigurationBuilder clientBuilder =
+        LettuceClientConfiguration.builder().useSsl();	
 	
 
 
@@ -75,30 +72,10 @@ public class RedisConfig {
         //         .disablePeerVerification();  // 인증서 검증 끌 때 (필요 시)
         // }
 
-//        LettuceClientConfiguration clientConfig = clientBuilder.build();  // 임시 주석 처리
+        LettuceClientConfiguration clientConfig = clientBuilder.build();
 
         // 3) 팩토리 생성
-//        return new LettuceConnectionFactory(standaloneConfig, clientConfig);  // 임시 주석 처리
-        
-        
-        
-        if (StringUtils.hasText(password)) { // 임시
-            standaloneConfig.setPassword(RedisPassword.of(password));
-        }
-
-        LettuceClientConfiguration.LettuceClientConfigurationBuilder clientBuilder = // 임시
-            LettuceClientConfiguration.builder()
-                .commandTimeout(Duration.ofSeconds(5));
-
-        // ✅ application.properties 의 spring.data.redis.ssl.enabled 가 true 일 때만 SSL 사용
-        if (sslEnabled) { // 임시
-            clientBuilder.useSsl();
-            // 로컬 개발이면 보통 peer verification 끌 필요까지는 없음. 꼭 필요할 때만 ↓
-            // clientBuilder.disablePeerVerification();
-        }
-
-        return new LettuceConnectionFactory(standaloneConfig, clientBuilder.build()); // 임시
-        
+        return new LettuceConnectionFactory(standaloneConfig, clientConfig);
     }
 
     @Bean
@@ -122,4 +99,3 @@ public class RedisConfig {
         return template;
     }
 }
-

@@ -3,7 +3,6 @@ package com.matchFit.common.config;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.Message;
@@ -27,7 +26,6 @@ public class RedisListenerConfig {
 	
 	private final RedisConnectionFactory connectionFactory;
 	
-	@ConditionalOnProperty(value = "app.redis.listeners.enabled", havingValue = "true", matchIfMissing = true)
     @Bean
     public RedisMessageListenerContainer redisContainer(
             LettuceConnectionFactory connectionFactory,
@@ -40,7 +38,6 @@ public class RedisListenerConfig {
             expiredKeyListener,
             new PatternTopic("__keyevent@0__:expired")
         );
-        
         return container;
     }
 
