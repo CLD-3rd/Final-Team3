@@ -1,6 +1,7 @@
 package com.matchFit.post.service;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -28,13 +29,20 @@ public class PostViewService {
     public void recordView(Long postId, Long userId) {
         String viewKey = String.format(VIEW_KEY_FMT, postId, userId);
 
+        // 기존과 동일하게 최초 조회 체크
         Boolean isNew = redis.opsForValue()
-            .setIfAbsent(viewKey, "1", VIEW_TTL);
+            .setIfAbsent(viewKey, "1", VIEW_TTL); // VIEW_TTL = Duration.ofMinutes(1)
         if (Boolean.TRUE.equals(isNew)) {
-            // 최초 조회이므로 포스트 조회수 1 증가
+            // 1️⃣ 조회수 증가 (실제 카운트)
             redis.opsForZSet().incrementScore(ZSET_KEY, postId.toString(), 1);
+
+            // 2️⃣ ZSET에 만료 시각 저장 (worker가 TTL 체크)
+            long expireAt = Instant.now().getEpochSecond() + VIEW_TTL.getSeconds();
+            String zsetMember = String.format("view:post_%d:user_%d", postId, userId);
+            redis.opsForZSet().add("views:expiring", zsetMember, expireAt);
         }
     }
+
     
     /** 만료될 때 호출해서 점수를 1 차감 */
     public void decrementViewCount(Long postId) {

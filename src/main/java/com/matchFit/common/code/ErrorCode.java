@@ -18,6 +18,10 @@ public enum ErrorCode {
 	POST_PAST_MONTHS("POST405", "과거 달에 게시글을 조회할 수 없습니다.", HttpStatus.BAD_REQUEST),
 	
 	
+	// PARTICIPATION
+	PARTICIPATION_CANCELLATION_TIME_EXCEEDED("PARTICIPATION400", "경기 하루 전부터는 취소할 수 없습니다.", HttpStatus.BAD_REQUEST),
+
+	
 	// USER
 	EMAIL_DUPLICATION("USER400", "이미 사용중인 이메일입니다.", HttpStatus.BAD_REQUEST), 
 	NICKNAME_DUPLICATION("USER401", "이미 사용중인 닉네임입니다.", HttpStatus.BAD_REQUEST),
@@ -29,6 +33,8 @@ public enum ErrorCode {
 	NICKNAME_NOT_FOUND("USER406", "존재하지 않는 닉네임입니다.", HttpStatus.BAD_REQUEST),
 	PASSWORD_SAME("USER407", "이전 비밀번호와 동일합니다.", HttpStatus.BAD_REQUEST),
 	EMAIL_NOT_FOUND("USER408", "가입된 이메일이 아닙니다.", HttpStatus.BAD_REQUEST);
+	
+	
 	
 	
 	private final String code;
