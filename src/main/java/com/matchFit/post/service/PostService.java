@@ -382,6 +382,9 @@ public class PostService {
         // 신청 내역 먼저 삭제
         participationRepository.deleteByPostId(postId);
         
+        // 찜 내역도 삭제
+        followRepository.deleteByPostId(postId);
+        
         // 이미지가 S3에 있으면 삭제 (선택)
         if (post.getImageUrl() != null && !post.getImageUrl().isBlank()) {
             s3Service.deleteByUrl(post.getImageUrl());
