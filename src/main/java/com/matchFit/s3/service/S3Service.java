@@ -98,4 +98,27 @@ public class S3Service {
         String contentType = file.getContentType();
         return contentType != null && contentType.startsWith("image/");
     }
+    
+    // 안전한 삭제 구현
+    public void deleteByUrl(String imageUrl) {
+        if (imageUrl == null || imageUrl.isBlank()) return;
+
+        String key = extractKeyFromUrl(imageUrl);
+        if (key == null || key.isBlank()) return;
+
+        // aws sdk v1 방식 (간단히 bucket + key)
+        amazonS3.deleteObject(bucketName, key);
+    }
+    
+    private String extractKeyFromUrl(String imageUrl) {
+        // 일반적인 S3 퍼블릭 URL 패턴에서 key 추출
+        String marker = ".amazonaws.com/";
+        int idx = imageUrl.indexOf(marker);
+        if (idx != -1) {
+            return imageUrl.substring(idx + marker.length());
+        }
+        // 혹시 imageUrl이 이미 key라면 그대로 반환
+        return imageUrl;
+    }
+    
 }
