@@ -26,6 +26,9 @@ public enum SuccessCode {
     USER_GET_MY_PROFILE("USER204", "사용자 프로필 정보를 성공적으로 조회했습니다."),
 	USER_EDIT_MY_PROFILE("USER205", "사용자 프로필 정보가 성공적으로 수정되었습니다."),
 	USER_GET_MY_FOLLOWS("USER206", "내가 찜한 모집글 리스트를 성공적으로 조회했습니다."),
+	USER_FIND_MY_EMAIL("USER207", "내 이메일 찾기에 성공했습니다."),
+	USER_REQUEST_PASSWORD_RESET("USER208", "비밀번호 재설정 요청에 성공했습니다."),
+	USER_CONFIRMED_PASSWORD_RESET("USER209", "비밀번호 재설정에 성공했습니다."),
 
 	
 	// PARTICIPATION

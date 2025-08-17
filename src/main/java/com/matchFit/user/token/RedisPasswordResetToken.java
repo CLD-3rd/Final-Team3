@@ -31,7 +31,11 @@ public class RedisPasswordResetToken {
         String userId = redis.opsForValue().get(key);
         if (userId == null) return null;
         redis.delete(key);
-        try { return Long.parseLong(userId); } catch (NumberFormatException e) { return null; }
+        try {
+        	return Long.parseLong(userId); 
+        } catch (NumberFormatException e) { 
+        	return null; 
+        }
     }
 
     private String generateToken() {

@@ -17,10 +17,9 @@ import com.matchFit.common.code.SuccessCode;
 import com.matchFit.common.dto.response.ApiResponseDTO;
 import com.matchFit.post.entity.Sports;
 import com.matchFit.user.dto.request.FindEmailRequest;
-import com.matchFit.user.dto.request.PasswordResetConfirmRequest;
+import com.matchFit.user.dto.request.PasswordResetRequest;
 import com.matchFit.user.dto.request.SignUpRequest;
 import com.matchFit.user.dto.response.FindEmailResponse;
-import com.matchFit.user.dto.response.PWMessageResponse;
 import com.matchFit.user.entity.Gender;
 import com.matchFit.user.entity.User;
 import com.matchFit.user.exception.EmailAlreadyExistException;
@@ -163,23 +162,23 @@ public class AuthController {
         
     }
     
-    
+       
     @PostMapping("/find-email")
-    public ResponseEntity <FindEmailResponse> findEmail(@RequestBody FindEmailRequest findEmailRequest) {
-    	return ResponseEntity.ok(accountRecoveryService.findEmail(findEmailRequest));
+    public ResponseEntity<ApiResponseDTO<FindEmailResponse>> findEmail(@RequestBody FindEmailRequest findEmailRequest) {
+        FindEmailResponse response = accountRecoveryService.findEmail(findEmailRequest);
+        return ResponseEntity.ok(ApiResponseDTO.onSuccess(SuccessCode.USER_FIND_MY_EMAIL, response));
     }
-    
+
     @PostMapping("/request-password")
-    public ResponseEntity<PWMessageResponse> request(@RequestBody PasswordResetConfirmRequest req){
-    	return ResponseEntity.ok(accountRecoveryService.requestReset(req));
+    public ResponseEntity<ApiResponseDTO<Void>> request(@RequestBody PasswordResetRequest req) {
+        accountRecoveryService.requestReset(req);
+        return ResponseEntity.ok(ApiResponseDTO.onSuccess(SuccessCode.USER_REQUEST_PASSWORD_RESET, null));
     }
-    
+
     @PostMapping("/confirm-password")
-    public ResponseEntity<PWMessageResponse> confirm(@RequestBody PasswordResetConfirmRequest req) {
-        return ResponseEntity.ok(accountRecoveryService.confirmReset(req));
+    public ResponseEntity<ApiResponseDTO<Void>> confirm(@RequestBody PasswordResetRequest req) {
+        accountRecoveryService.confirmReset(req);
+        return ResponseEntity.ok(ApiResponseDTO.onSuccess(SuccessCode.USER_CONFIRMED_PASSWORD_RESET, null));
     }
-    
-    
-    
     
 }

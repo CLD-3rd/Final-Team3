@@ -25,7 +25,11 @@ public enum ErrorCode {
 	SPORTS_INVALID("USER403", "유효하지 않은 운동입니다.", HttpStatus.BAD_REQUEST),
 	USER_NOT_FOUND("USER404", "존재하지 않는 사용자입니다.", HttpStatus.NOT_FOUND),
 	PASSWORD_INVALID("USER405", "유효하지 않은 비밀번호입니다.", HttpStatus.BAD_REQUEST),
-	KAKAO_LOGIN_FAILED("USER405", "카카오 계정으로 로그인한 사용자입니다. 일반 로그인은 불가능합니다.", HttpStatus.UNAUTHORIZED);
+	KAKAO_LOGIN_FAILED("USER405", "카카오 계정으로 로그인한 사용자입니다. 일반 로그인은 불가능합니다.", HttpStatus.UNAUTHORIZED),
+	NICKNAME_NOT_FOUND("USER406", "존재하지 않는 닉네임입니다.", HttpStatus.BAD_REQUEST),
+	PASSWORD_SAME("USER407", "이전 비밀번호와 동일합니다.", HttpStatus.BAD_REQUEST),
+	EMAIL_NOT_FOUND("USER408", "가입된 이메일이 아닙니다.", HttpStatus.BAD_REQUEST);
+	
 	
 	private final String code;
     private final String message;
