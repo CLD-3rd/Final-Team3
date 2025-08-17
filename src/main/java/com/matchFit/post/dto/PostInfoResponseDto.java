@@ -7,6 +7,7 @@ import com.matchFit.post.entity.Sports;
 import com.matchFit.post.entity.Status;
 import com.matchFit.post.entity.Town;
 import com.matchFit.user.entity.Gender;
+import com.matchFit.weather.dto.WeatherResponseDto;
 
 import lombok.Getter;
 

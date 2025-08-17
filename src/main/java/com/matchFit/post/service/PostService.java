@@ -26,7 +26,6 @@ import com.matchFit.post.dto.PostInfoResponseDto;
 import com.matchFit.post.dto.PostRequestDto;
 import com.matchFit.post.dto.UpdatePostRequestDto;
 import com.matchFit.post.dto.UpdatePostResponseDto;
-import com.matchFit.post.dto.WeatherResponseDto;
 import com.matchFit.post.dto.response.GetMyPost;
 import com.matchFit.post.dto.response.GetMyPosts;
 import com.matchFit.post.dto.response.GetPost;
@@ -48,6 +47,8 @@ import com.matchFit.s3.service.S3Service;
 import com.matchFit.user.entity.Gender;
 import com.matchFit.user.entity.User;
 import com.matchFit.user.security.CustomUserDetails;
+import com.matchFit.weather.dto.WeatherResponseDto;
+import com.matchFit.weather.service.WeatherService;
 
 import lombok.RequiredArgsConstructor;
 

@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import com.matchFit.post.entity.Post;
+import com.matchFit.post.entity.Status;
 
 public interface PostRepository extends JpaRepository<Post, Long> {
 
@@ -48,5 +49,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     List<Post> findAllByDateBetween(LocalDateTime start, LocalDateTime end);
     
     List<Post> findByUserIdOrderByCreatedAtDesc(Long userId);
+
+	List<Post> findByStatusAndDate(Status closed, LocalDate tomorrow);
 }
 

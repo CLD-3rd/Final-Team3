@@ -1,4 +1,4 @@
-package com.matchFit.post.dto;
+package com.matchFit.weather.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

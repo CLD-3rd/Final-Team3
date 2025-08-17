@@ -1,4 +1,4 @@
-package com.matchFit.post.service;
+package com.matchFit.weather.service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -11,9 +11,9 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.matchFit.post.dto.WeatherResponseDto;
 import com.matchFit.post.entity.Town;
-import com.matchFit.post.util.RegionCodeMapper;
+import com.matchFit.weather.dto.WeatherResponseDto;
+import com.matchFit.weather.util.RegionCodeMapper;
 
 import lombok.RequiredArgsConstructor;
 

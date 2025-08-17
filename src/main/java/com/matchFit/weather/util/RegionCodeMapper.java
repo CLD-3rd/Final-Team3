@@ -1,4 +1,4 @@
-package com.matchFit.post.util;
+package com.matchFit.weather.util;
 
 import java.util.Map;
 
