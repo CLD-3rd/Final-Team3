@@ -7,6 +7,7 @@ import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -54,5 +55,13 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 
 
 	List<Post> findByStatusAndDateBetween(Status status, LocalDateTime startDate, LocalDateTime endDate);
+
+    
+    @Modifying
+    @Query("update Post p set p.status = :expired where p.date < :now and p.status = :open")
+    int markExpired(@Param("now") LocalDateTime now,
+                    @Param("expired") Status expired,
+                    @Param("open") Status open);
+
 }
 

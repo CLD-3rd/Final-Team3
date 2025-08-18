@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -52,11 +53,13 @@ import com.matchFit.weather.dto.WeatherResponseDto;
 import com.matchFit.weather.service.ShortWeatherService;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 
 @Transactional
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PostService {
 	private final FollowRepository followRepository;
 	private final ParticipationRepository participationRepository;
@@ -402,6 +405,14 @@ public class PostService {
 
         // 모집글 삭제
         postRepository.delete(post);
+    }
+    
+    // 매분 0초에 실행 (원하면 cron 수정)
+    @Scheduled(cron = "0 0/10 * * * *")
+    @Transactional
+    public void expirePosts() {
+        LocalDateTime now = LocalDateTime.now(); // timezone 고려 (아래 참조)
+        int updated = postRepository.markExpired(now, Status.EXPIRED, Status.OPEN);
     }
     
 }
