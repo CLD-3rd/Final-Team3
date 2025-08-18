@@ -1,5 +1,7 @@
 package com.matchFit.notification.email.service.impl;
 
+import java.time.format.DateTimeFormatter;
+
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
@@ -19,6 +21,12 @@ public class EmailNotiServiceImpl implements NotificationService {
 	
 	@Override
 	public void sendMatchReminder(User user, Post post, WeatherResponseDto weather, String postUrl) {
+	    String weatherDesc = weather != null ? weather.getWeather() : "정보 없음";
+	    String precipitation = weather != null ? weather.getPrecipitation() : "-";
+	    String tempMin = weather != null ? weather.getTempMin() : "-";
+	    String tempMax = weather != null ? weather.getTempMax() : "-";
+	    String humidity = weather != null ? weather.getHumidity() : "-";
+
 	    String subject = "[MatchFit] 내일 경기 알림: " + post.getTitle();
 	    String message = String.format(
 	        """
@@ -28,7 +36,10 @@ public class EmailNotiServiceImpl implements NotificationService {
 
 	        🕒 시간: %s
 	        📍 장소: %s
-	        🌤️ 날씨: %s (%s), 강수확률 %s, 풍속 %s
+	        🌤️ 날씨: %s
+	        🌡️ 최저/최고 온도: %s°C / %s°C
+	        💧 강수 확률: %s
+	        💦 습도: %s
 
 	        👉 상세 보기: %s
 
@@ -36,12 +47,13 @@ public class EmailNotiServiceImpl implements NotificationService {
 	        """,
 	        user.getNickname(),
 	        post.getTitle(),
-	        post.getDate().toLocalTime(),
+	        post.getDate().toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm")),
 	        post.getLocation(),
-	        weather.getWeatherDescription(),
-	        weather.getTemperature(),
-	        weather.getPrecipitationProbability(),
-	        weather.getWindSpeed(),
+	        weatherDesc,
+	        tempMin,
+	        tempMax,
+	        precipitation,
+	        humidity,
 	        postUrl
 	    );
 
@@ -52,5 +64,6 @@ public class EmailNotiServiceImpl implements NotificationService {
 
 	    mailSender.send(mail);
 	}
+
 
 }

@@ -51,5 +51,8 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     List<Post> findByUserIdOrderByCreatedAtDesc(Long userId);
 
 	List<Post> findByStatusAndDate(Status closed, LocalDate tomorrow);
+
+
+	List<Post> findByStatusAndDateBetween(Status status, LocalDateTime startDate, LocalDateTime endDate);
 }
 

@@ -17,4 +17,9 @@ public class EmailAlertScheduler {
     public void run() {
         postAlertService.notifyUsersAboutTomorrowMatches();
     }
+    
+    // 테스트용으로 오늘 바로 내일 경기 알림 이메일 보내기
+//    public void runNowSendTomorrowAlerts() {
+//        postAlertService.notifyUsersAboutTomorrowMatches();
+//    }
 }

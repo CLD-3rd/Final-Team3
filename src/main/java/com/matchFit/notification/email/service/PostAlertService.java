@@ -1,6 +1,8 @@
 package com.matchFit.notification.email.service;
 
+
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -33,9 +35,10 @@ public class PostAlertService {
         List<Post> posts = postRepository.findByStatusAndDate(Status.CLOSED, tomorrow);
 
         for (Post post : posts) {
-            // 조건 정책 검사 (필요하다면)
             if (PostNotificationPolicy.isMatchTomorrow(post)) {
-                WeatherResponseDto weather = weatherService.getWeatherByDateAndTown(tomorrow, post.getTown());
+                LocalDateTime targetDateTime = tomorrow.atStartOfDay();
+                // town과 targetDateTime만 넘기기
+                WeatherResponseDto weather = weatherService.getShortTermWeatherByTown(post.getTown(), targetDateTime);
                 User user = post.getUser();
                 String postUrl = frontendUrl + "/post/" + post.getId();
                 notificationService.sendMatchReminder(user, post, weather, postUrl);
