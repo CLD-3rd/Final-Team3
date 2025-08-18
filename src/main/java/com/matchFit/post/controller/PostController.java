@@ -50,7 +50,6 @@ public class PostController {
 	private final UserService userService;
 	private final ParticipationService participationService;
 	
-
 	// 모집글 생성
 	@PostMapping
 	public ResponseEntity<ApiResponseDTO<String>> createPosts(

@@ -50,11 +50,18 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     List<Post> findAllByDateBetween(LocalDateTime start, LocalDateTime end);
     
     List<Post> findByUserIdOrderByCreatedAtDesc(Long userId);
+
+	List<Post> findByStatusAndDate(Status closed, LocalDate tomorrow);
+
+
+	List<Post> findByStatusAndDateBetween(Status status, LocalDateTime startDate, LocalDateTime endDate);
+
     
     @Modifying
     @Query("update Post p set p.status = :expired where p.date < :now and p.status = :open")
     int markExpired(@Param("now") LocalDateTime now,
                     @Param("expired") Status expired,
                     @Param("open") Status open);
+
 }
 
