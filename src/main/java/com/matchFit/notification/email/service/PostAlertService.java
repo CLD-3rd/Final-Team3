@@ -12,7 +12,7 @@ import com.matchFit.post.policy.PostNotificationPolicy;
 import com.matchFit.post.repository.PostRepository;
 import com.matchFit.user.entity.User;
 import com.matchFit.weather.dto.WeatherResponseDto;
-import com.matchFit.weather.service.WeatherService;
+import com.matchFit.weather.service.ShortWeatherService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -21,7 +21,7 @@ import lombok.RequiredArgsConstructor;
 public class PostAlertService {
 
     private final PostRepository postRepository;
-    private final WeatherService weatherService;
+    private final ShortWeatherService weatherService;
     private final NotificationService notificationService;
 
     @Value("${app.frontend.url}")

@@ -36,6 +36,7 @@ import com.matchFit.post.entity.Post;
 import com.matchFit.post.entity.SortType;
 import com.matchFit.post.entity.Sports;
 import com.matchFit.post.entity.Status;
+import com.matchFit.post.entity.Town;
 import com.matchFit.post.exception.InvalidSortingTypeException;
 import com.matchFit.post.exception.PastDayException;
 import com.matchFit.post.exception.PastEventModificationException;
@@ -48,7 +49,7 @@ import com.matchFit.user.entity.Gender;
 import com.matchFit.user.entity.User;
 import com.matchFit.user.security.CustomUserDetails;
 import com.matchFit.weather.dto.WeatherResponseDto;
-import com.matchFit.weather.service.WeatherService;
+import com.matchFit.weather.service.ShortWeatherService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -62,7 +63,7 @@ public class PostService {
     private final PostRepository postRepository;
     private final PostViewService postViewService;
     private final S3Service s3Service;
-    private final WeatherService weatherService;
+    private final ShortWeatherService weatherService;
     
     public GetPostsList findByFilters(Sports sports, Gender gender, SortType sortType, LocalDate date, Pageable pageable) {
         if (date != null) validateNotPastDate(date);
@@ -172,10 +173,15 @@ public class PostService {
 	    if (userId != null) {
 	    	isBookmarked = followRepository.existsByUserIdAndPostId(userId, postId);
 	    }
-	    // 날씨 정보 호출
-	    WeatherResponseDto weather = weatherService.getWeatherByDateAndTown(post.getDate().toLocalDate(), post.getTown());
-		
-	    return new PostInfoResponseDto(post, currentParticipantsCount, isBookmarked, weather);
+	    
+	    Town townEnum = post.getTown();
+	    LocalDateTime targetTime = post.getDate(); // 모임 시간
+	    // 단일 WeatherResponseDto 받아오기
+	    WeatherResponseDto weatherNow = weatherService.getShortTermWeatherByTown(townEnum, targetTime);
+
+	    // 바로 날씨 DTO를 PostInfoResponseDto 생성자에 넣기
+	    return new PostInfoResponseDto(post, currentParticipantsCount, isBookmarked, weatherNow);
+
 	}
 	
 	@Transactional(readOnly = true)
