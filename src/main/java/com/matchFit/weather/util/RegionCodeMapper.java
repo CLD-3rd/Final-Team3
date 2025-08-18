@@ -48,20 +48,19 @@ public class RegionCodeMapper {
             Map.entry("JEJU", new int[]{52, 38})
         );
 
-        private String getNx(String regionCode) {
-            int[] coords = regionGridMap.get(regionCode);
-            if (coords == null) {
-                // 기본값 혹은 예외처리
-                coords = new int[]{60, 127};  // 서울 기본값
-            }
-            return String.valueOf(coords[0]);
-        }
-
-        private String getNy(String regionCode) {
-            int[] coords = regionGridMap.get(regionCode);
-            if (coords == null) {
-                coords = new int[]{60, 127};
-            }
-            return String.valueOf(coords[1]);
-        }
+	    public static String getNx(String regionCode) {
+	        int[] coords = regionGridMap.get(regionCode);
+	        if (coords == null) {
+	            coords = new int[]{60, 127};  // 기본값 (서울)
+	        }
+	        return String.valueOf(coords[0]);
+	    }
+	
+	    public static String getNy(String regionCode) {
+	        int[] coords = regionGridMap.get(regionCode);
+	        if (coords == null) {
+	            coords = new int[]{60, 127};  // 기본값 (서울)
+	        }
+	        return String.valueOf(coords[1]);
+	    }
 }

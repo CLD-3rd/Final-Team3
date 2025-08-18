@@ -17,7 +17,9 @@ import com.matchFit.weather.dto.WeatherResponseDto;
 import com.matchFit.weather.service.ShortWeatherService;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PostAlertService {
@@ -37,8 +39,15 @@ public class PostAlertService {
         for (Post post : posts) {
             if (PostNotificationPolicy.isMatchTomorrow(post)) {
                 LocalDateTime targetDateTime = tomorrow.atStartOfDay();
-                // town과 targetDateTime만 넘기기
-                WeatherResponseDto weather = weatherService.getShortTermWeatherByTown(post.getTown(), targetDateTime);
+                WeatherResponseDto weather = null;
+
+                try {
+                    weather = weatherService.getShortTermWeatherByTown(post.getTown(), targetDateTime);
+                } catch (Exception e) {
+                    log.error("Weather API 호출 실패", e);
+                    weather = null; // 실패 시 null 처리
+                }
+
                 User user = post.getUser();
                 String postUrl = frontendUrl + "/post/" + post.getId();
                 notificationService.sendMatchReminder(user, post, weather, postUrl);

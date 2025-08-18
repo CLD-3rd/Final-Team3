@@ -19,7 +19,9 @@ import com.matchFit.weather.dto.WeatherResponseDto;
 import com.matchFit.weather.util.RegionCodeMapper;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ShortWeatherService {
@@ -53,8 +55,8 @@ public class ShortWeatherService {
                 .queryParam("dataType", "JSON")
                 .queryParam("base_date", baseDate)
                 .queryParam("base_time", baseTime)
-                .queryParam("nx", getNx(regionCode))
-                .queryParam("ny", getNy(regionCode))
+                .queryParam("nx", RegionCodeMapper.getNx(town.name()))
+                .queryParam("ny", RegionCodeMapper.getNy(town.name()))
                 .build(true)
                 .toUri();
 
@@ -104,15 +106,6 @@ public class ShortWeatherService {
         return String.format("%02d00", selectedHour);
     }
 
-    private String getNx(String regionCode) {
-        // TODO: 실제 좌표 매핑 필요
-        return "60";
-    }
-
-    private String getNy(String regionCode) {
-        // TODO: 실제 좌표 매핑 필요
-        return "127";
-    }
 
     private WeatherResponseDto parseShortTermForecast(JsonNode items, LocalDateTime targetTime) {
         Map<String, String> categoryMap = new HashMap<>();
