@@ -20,4 +20,7 @@ public interface FollowRepository extends JpaRepository<Follow, Long> {
     
     // 팔로우 삭제 
     void deleteByUserIdAndPostId(Long userId, Long postId);
+    
+    // 게시글 기준으로 모든 팔로우 삭제
+    void deleteByPostId(Long postId);
 }
