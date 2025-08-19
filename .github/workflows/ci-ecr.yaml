@@ -44,6 +44,10 @@ jobs:
       - name: Show application.properties
         run: cat ./src/main/resources/application.properties
 
+      # - name: Verify application.properties in jar
+      #   run: |
+      #     jar tf ./target/app.jar | grep application.properties || echo "application.properties not found in jar"
+
       - name: Build with Maven
         run: mvn -B -DskipTests package --file pom.xml
 

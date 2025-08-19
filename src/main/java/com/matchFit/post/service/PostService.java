@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,6 +37,7 @@ import com.matchFit.post.entity.Post;
 import com.matchFit.post.entity.SortType;
 import com.matchFit.post.entity.Sports;
 import com.matchFit.post.entity.Status;
+import com.matchFit.post.entity.Town;
 import com.matchFit.post.exception.InvalidSortingTypeException;
 import com.matchFit.post.exception.PastDayException;
 import com.matchFit.post.exception.PastEventModificationException;
@@ -47,19 +49,24 @@ import com.matchFit.s3.service.S3Service;
 import com.matchFit.user.entity.Gender;
 import com.matchFit.user.entity.User;
 import com.matchFit.user.security.CustomUserDetails;
+import com.matchFit.weather.dto.WeatherResponseDto;
+import com.matchFit.weather.service.ShortWeatherService;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 
 @Transactional
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PostService {
 	private final FollowRepository followRepository;
 	private final ParticipationRepository participationRepository;
     private final PostRepository postRepository;
     private final PostViewService postViewService;
     private final S3Service s3Service;
+    private final ShortWeatherService weatherService;
     
     public GetPostsList findByFilters(Sports sports, Gender gender, SortType sortType, LocalDate date, Pageable pageable) {
         if (date != null) validateNotPastDate(date);
@@ -126,7 +133,6 @@ public class PostService {
         return GetPostsCalender.of(calendarEntries);
     }
 
-    
 	
 	// 모집 글 생성
     public Post create(PostRequestDto dto, MultipartFile image, @AuthenticationPrincipal CustomUserDetails userDetails) {
@@ -169,8 +175,16 @@ public class PostService {
 		boolean isBookmarked = false; 
 	    if (userId != null) {
 	    	isBookmarked = followRepository.existsByUserIdAndPostId(userId, postId);
-	    }	
-		return new PostInfoResponseDto(post, currentParticipantsCount, isBookmarked);
+	    }
+	    
+	    Town townEnum = post.getTown();
+	    LocalDateTime targetTime = post.getDate(); // 모임 시간
+	    // 단일 WeatherResponseDto 받아오기
+	    WeatherResponseDto weatherNow = weatherService.getShortTermWeatherByTown(townEnum, targetTime);
+
+	    // 바로 날씨 DTO를 PostInfoResponseDto 생성자에 넣기
+	    return new PostInfoResponseDto(post, currentParticipantsCount, isBookmarked, weatherNow);
+
 	}
 	
 	@Transactional(readOnly = true)
@@ -391,6 +405,14 @@ public class PostService {
 
         // 모집글 삭제
         postRepository.delete(post);
+    }
+    
+    // 매분 0초에 실행 (원하면 cron 수정)
+    @Scheduled(cron = "0 0/10 * * * *")
+    @Transactional
+    public void expirePosts() {
+        LocalDateTime now = LocalDateTime.now(); // timezone 고려 (아래 참조)
+        int updated = postRepository.markExpired(now, Status.EXPIRED, Status.OPEN);
     }
     
 }

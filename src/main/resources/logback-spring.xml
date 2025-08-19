@@ -1,0 +1,28 @@
+<configuration>
+  <include resource="org/springframework/boot/logging/logback/base.xml"/>
+
+  <appender name="JSON_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+      <!-- customFields: 서비스명/환경 식별용 -->
+      <customFields>{"app":"matchfit-api","env":"prod"}</customFields>
+
+      <!-- 로그 메시지를 JSON에서 log 필드로 통일 -->
+      <fieldNames>
+        <message>log</message>
+      </fieldNames>
+
+      <!-- 스택트레이스나 멀티라인 로그를 1줄 JSON으로 인코딩 -->
+      <includeStructuredArguments>true</includeStructuredArguments>
+      <includeNonStructuredArguments>true</includeNonStructuredArguments>
+      <stackTraceAsString>true</stackTraceAsString>
+    </encoder>
+  </appender>
+
+  <root level="INFO">
+    <appender-ref ref="JSON_CONSOLE"/>
+  </root>
+
+  <!-- Hibernate SQL 로그 강제 출력 -->
+  <logger name="org.hibernate.SQL" level="DEBUG"/>
+  <logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="TRACE"/>
+</configuration>
