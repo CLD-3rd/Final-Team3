@@ -185,26 +185,38 @@ jobs:
             --namespace monitoring --create-namespace \
             --values manifest/base/monitoring/grafana-values.yaml
 
-      - name: Check if AlertManager email config exists
+      - name: Check current AlertManager config
         id: check-alertmanager-config
         run: |
           if kubectl get secret alertmanager-prometheus-stack-kube-prom-alertmanager -n monitoring &>/dev/null; then
-            if kubectl get secret alertmanager-prometheus-stack-kube-prom-alertmanager -n monitoring -o jsonpath='{.data.alertmanager\.yml}' | base64 -d | grep -q "smtp_from.*dngl1232@gmail.com"; then
+            current_config=$(kubectl get secret alertmanager-prometheus-stack-kube-prom-alertmanager -n monitoring -o jsonpath='{.data.alertmanager\.yml}' | base64 -d)
+            if echo "$current_config" | grep -q "smtp_from.*dngl1232@gmail.com"; then
               echo "config_exists=true" >> $GITHUB_OUTPUT
+              echo "AlertManager email config already configured"
             else
               echo "config_exists=false" >> $GITHUB_OUTPUT
+              echo "AlertManager exists but email not configured"
             fi
           else
             echo "config_exists=false" >> $GITHUB_OUTPUT
+            echo "AlertManager secret not found"
           fi
 
-      - name: Setup AlertManager Email Configuration
+      - name: Apply AlertManager Email Configuration
         if: steps.check-alertmanager-config.outputs.config_exists == 'false'
         run: |
+          echo "Applying AlertManager email configuration..."
+          
+          kubectl get secret alertmanager-prometheus-stack-kube-prom-alertmanager -n monitoring -o yaml > alertmanager-backup.yaml || true
+          
           sed "s/GMAIL_APP_PASSWORD/${{ secrets.GMAIL_APP_PASSWORD }}/g" \
             manifest/base/monitoring/alertmanager-email-config.yaml > temp-alertmanager-config.yaml
+          
+          kubectl delete secret alertmanager-prometheus-stack-kube-prom-alertmanager -n monitoring --ignore-not-found=true
           kubectl apply -f temp-alertmanager-config.yaml
           rm temp-alertmanager-config.yaml
+          
+          echo "AlertManager email configuration applied"
 
       - name: Check if alert rules exist
         id: check-alert-rules
@@ -220,8 +232,26 @@ jobs:
         run: |
           kubectl apply -f manifest/base/monitoring/alert-rules.yaml
 
-      - name: Restart AlertManager (only if config was updated)
+      - name: Restart AlertManager to apply new config
         if: steps.check-alertmanager-config.outputs.config_exists == 'false'
         run: |
-          kubectl delete pod -n monitoring -l app.kubernetes.io/name=alertmanager
-          kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=alertmanager -n monitoring --timeout=300s
+          echo "Restarting AlertManager to apply new configuration..."
+          
+          kubectl rollout restart statefulset/alertmanager-prometheus-stack-kube-prom-alertmanager -n monitoring
+          kubectl rollout status statefulset/alertmanager-prometheus-stack-kube-prom-alertmanager -n monitoring --timeout=300s
+          
+          echo "AlertManager restarted successfully"
+
+      - name: Verify AlertManager configuration
+        run: |
+          echo "Verifying AlertManager configuration..."
+          
+          if kubectl get secret alertmanager-prometheus-stack-kube-prom-alertmanager -n monitoring -o jsonpath='{.data.alertmanager\.yml}' | base64 -d | grep -q "smtp_from.*dngl1232@gmail.com"; then
+            echo "Email configuration verified in Secret"
+          else
+            echo "Email configuration not found in Secret"
+            exit 1
+          fi
+          
+          kubectl get pods -n monitoring -l app.kubernetes.io/name=alertmanager
+          echo "AlertManager configuration verification completed"
