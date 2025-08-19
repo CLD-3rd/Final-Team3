@@ -184,3 +184,44 @@ jobs:
           helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
             --namespace monitoring --create-namespace \
             --values manifest/base/monitoring/grafana-values.yaml
+
+      - name: Check if AlertManager email config exists
+        id: check-alertmanager-config
+        run: |
+          if kubectl get secret alertmanager-prometheus-stack-kube-prom-alertmanager -n monitoring &>/dev/null; then
+            if kubectl get secret alertmanager-prometheus-stack-kube-prom-alertmanager -n monitoring -o jsonpath='{.data.alertmanager\.yml}' | base64 -d | grep -q "smtp_from.*dngl1232@gmail.com"; then
+              echo "config_exists=true" >> $GITHUB_OUTPUT
+            else
+              echo "config_exists=false" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "config_exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Setup AlertManager Email Configuration
+        if: steps.check-alertmanager-config.outputs.config_exists == 'false'
+        run: |
+          sed "s/GMAIL_APP_PASSWORD/${{ secrets.GMAIL_APP_PASSWORD }}/g" \
+            manifest/base/monitoring/alertmanager-email-config.yaml > temp-alertmanager-config.yaml
+          kubectl apply -f temp-alertmanager-config.yaml
+          rm temp-alertmanager-config.yaml
+
+      - name: Check if alert rules exist
+        id: check-alert-rules
+        run: |
+          if kubectl get prometheusrule alert-rules -n monitoring &>/dev/null; then
+            echo "rules_exist=true" >> $GITHUB_OUTPUT
+          else
+            echo "rules_exist=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Apply Alert Rules
+        if: steps.check-alert-rules.outputs.rules_exist == 'false'
+        run: |
+          kubectl apply -f manifest/base/monitoring/alert-rules.yaml
+
+      - name: Restart AlertManager (only if config was updated)
+        if: steps.check-alertmanager-config.outputs.config_exists == 'false'
+        run: |
+          kubectl delete pod -n monitoring -l app.kubernetes.io/name=alertmanager
+          kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=alertmanager -n monitoring --timeout=300s
