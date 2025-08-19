@@ -27,6 +27,9 @@ public class PostViewService {
      * 10분 내에 중복 호출은 무시, 최초 호출일 때만 ZSET에 1 더함.
      */
     public void recordView(Long postId, Long userId) {
+    	if (userId == null) {
+            return;
+        }
         String viewKey = String.format(VIEW_KEY_FMT, postId, userId);
 
         // 기존과 동일하게 최초 조회 체크

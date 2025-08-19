@@ -170,10 +170,11 @@ public class PostService {
 			post.setStatus(Status.CLOSED);
 			postRepository.save(post);
 		}
-		postViewService.recordView(postId, userId);
+		
 		
 		boolean isBookmarked = false; 
 	    if (userId != null) {
+	    	postViewService.recordView(postId, userId);
 	    	isBookmarked = followRepository.existsByUserIdAndPostId(userId, postId);
 	    }
 	    
