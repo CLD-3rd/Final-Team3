@@ -171,6 +171,8 @@ jobs:
 
       - name: Deploy Prometheus stack
         run: |      
+          kubectl delete secret alertmanager-prometheus-stack-kube-prom-alertmanager -n monitoring --ignore-not-found=true
+
           sed "s/GMAIL_APP_PASSWORD/${{ secrets.GMAIL_APP_PASSWORD }}/g" \
           manifest/base/monitoring/grafana-values.yaml > temp-values.yaml
         
@@ -181,7 +183,4 @@ jobs:
         
           rm temp-values.yaml
       
-      - name: Restart AlertManager to apply config
-        run: |
-          kubectl delete pods -n monitoring -l app.kubernetes.io/name=alertmanager
-          kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=alertmanager -n monitoring --timeout=300s
+    
