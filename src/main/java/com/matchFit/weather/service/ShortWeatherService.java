@@ -45,8 +45,8 @@ public class ShortWeatherService {
         }
 
         // 기상청 단기예보는 base_time 기준으로 최신 데이터만 줌
-        String baseDate = calculateBaseDate(targetTime);
-        String baseTime = calculateBaseTime(targetTime);
+        String baseDate = calculateBaseDate(LocalDateTime.now());
+        String baseTime = calculateBaseTime(LocalDateTime.now());
 
         URI uri = UriComponentsBuilder.fromHttpUrl("https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getVilageFcst")
                 .queryParam("serviceKey", apiKey)
@@ -114,6 +114,9 @@ public class ShortWeatherService {
         Map<String, String> categoryMap = new HashMap<>();
         LocalDateTime closestForecastDateTime = null;
         long minDiff = Long.MAX_VALUE;
+        
+        String tmx = "-";
+        String tmn = "-";
 
         for (JsonNode item : items) {
             String category = item.path("category").asText(); // POP, SKY, TMP, etc.
