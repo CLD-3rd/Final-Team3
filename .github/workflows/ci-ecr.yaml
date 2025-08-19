@@ -179,58 +179,20 @@ jobs:
           fi
 
       - name: Deploy Prometheus stack (if not exists)
-        if: steps.check-prometheus.outputs.exists == 'false'
+        # if: steps.check-prometheus.outputs.exists == 'false'
         run: |
+          # helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
+          #   --namespace monitoring --create-namespace \
+          #   --values manifest/base/monitoring/grafana-values.yaml
+          kubectl delete secret alertmanager-prometheus-stack-kube-prom-alertmanager -n monitoring --ignore-not-found=true
+
+          sed "s/GMAIL_APP_PASSWORD/${{ secrets.GMAIL_APP_PASSWORD }}/g" \
+          manifest/base/monitoring/grafana-values.yaml > temp-values.yaml
+        
           helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
             --namespace monitoring --create-namespace \
-            --values manifest/base/monitoring/grafana-values.yaml
-      
-      - name: Check current AlertManager config
-        run: |
-          echo "Current AlertManager secret status:"
-          kubectl get secret alertmanager-prometheus-stack-kube-prom-alertmanager -n monitoring || echo "Secret not found"
-          
-          echo "Current config content:"
-          kubectl get secret alertmanager-prometheus-stack-kube-prom-alertmanager -n monitoring -o jsonpath='{.data.alertmanager\.yml}' | base64 -d || echo "Cannot decode config"
+            --values temp-values.yaml
+        
+          rm temp-values.yaml
 
-      - name: Backup and remove existing AlertManager config
-        run: |
-          echo "Backing up existing AlertManager config..."
-          kubectl get secret alertmanager-prometheus-stack-kube-prom-alertmanager -n monitoring -o yaml > alertmanager-backup.yaml || true
           
-          echo "Removing existing AlertManager secret..."
-          kubectl delete secret alertmanager-prometheus-stack-kube-prom-alertmanager -n monitoring --ignore-not-found=true
-          
-          echo "Existing secret removed"
-
-      - name: Apply new AlertManager Email Configuration
-        run: |
-          echo "Applying new AlertManager email configuration..."
-          
-          sed "s/GMAIL_APP_PASSWORD/${{ secrets.GMAIL_APP_PASSWORD }}/g" \
-            manifest/base/monitoring/alertmanager-email-config.yaml > temp-alertmanager-config.yaml
-          
-          kubectl apply -f temp-alertmanager-config.yaml
-          
-          rm temp-alertmanager-config.yaml
-          
-          echo "New AlertManager email configuration applied"
-
-      - name: Check and apply alert rules
-        run: |
-          if kubectl get prometheusrule alert-rules -n monitoring &>/dev/null; then
-            echo "Alert rules already exist"
-          else
-            echo "Applying alert rules..."
-            kubectl apply -f manifest/base/monitoring/alert-rules.yaml
-          fi
-
-      - name: Force restart AlertManager
-        run: |
-          echo "Force restarting AlertManager..."
-          
-          kubectl delete pods -n monitoring -l app.kubernetes.io/name=alertmanager --force --grace-period=0
-          
-          kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=alertmanager -n monitoring --timeout=300s
-          
-          echo "AlertManager restarted successfully"
