@@ -102,7 +102,7 @@ public class ShortWeatherService {
             // 발표 시간 기준으로 10분 지난 시점부터 사용 가능
             if (hour > h || (hour == h && minute >= 10)) {
                 return String.format("%02d00", h);
-                break;
+//                break;
             }
         }
 
