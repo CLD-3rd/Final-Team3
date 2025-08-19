@@ -169,21 +169,8 @@ jobs:
           helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
           helm repo update
 
-      - name: Check if Prometheus is already installed
-        id: check-prometheus
-        run: |
-          if helm list -n monitoring | grep kube-prometheus-stack; then
-            echo "exists=true" >> $GITHUB_OUTPUT
-          else
-            echo "exists=false" >> $GITHUB_OUTPUT
-          fi
-
       - name: Deploy Prometheus stack (if not exists)
-        # if: steps.check-prometheus.outputs.exists == 'false'
         run: |
-          # helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
-          #   --namespace monitoring --create-namespace \
-          #   --values manifest/base/monitoring/grafana-values.yaml
           kubectl delete secret alertmanager-prometheus-stack-kube-prom-alertmanager -n monitoring --ignore-not-found=true
 
           sed "s/GMAIL_APP_PASSWORD/${{ secrets.GMAIL_APP_PASSWORD }}/g" \
@@ -194,5 +181,3 @@ jobs:
             --values temp-values.yaml
         
           rm temp-values.yaml
-
-          
