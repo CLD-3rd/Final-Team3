@@ -173,14 +173,8 @@ jobs:
         run: |
           helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
             --namespace monitoring --create-namespace \
-            --values manifest/base/monitoring/grafana-values.yaml
-          
-          kubectl delete secret alertmanager-prometheus-stack-kube-prom-alertmanager -n monitoring --ignore-not-found=true
-          
-          sed "s/GMAIL_APP_PASSWORD/${{ secrets.GMAIL_APP_PASSWORD }}/g" \
-            manifest/base/monitoring/alertmanager-email-config.yaml > temp-config.yaml
-          
-          kubectl apply -f temp-config.yaml
-          rm temp-config.yaml
+            --values manifest/base/monitoring/grafana-values.yaml \
+            --values manifest/base/monitoring/alertmanager-values.yaml \
+            --set alertmanager.config.global.smtp_auth_password=${{ secrets.GMAIL_APP_PASSWORD }}
       
     
