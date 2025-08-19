@@ -36,6 +36,7 @@ public class TimingAspect {
             Timer timer = Timer.builder("method.execution")
                     .description("Execution time of methods (AOP)")
                     .tags("class", className, "method", methodName)
+                    .publishPercentileHistogram()
                     .register(meterRegistry);
 
             // 샘플을 해당 Timer에 기록
