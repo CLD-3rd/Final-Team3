@@ -170,18 +170,17 @@ jobs:
           helm repo update
 
       - name: Deploy Prometheus stack
-        run: |      
-          kubectl delete configmap alertmanager-kube-prometheus-stack-alertmanager -n monitoring --ignore-not-found=true
-          kubectl delete secret alertmanager-prometheus-stack-kube-prom-alertmanager -n monitoring --ignore-not-found=true
-
-          sed "s/GMAIL_APP_PASSWORD/${{ secrets.GMAIL_APP_PASSWORD }}/g" \
-          manifest/base/monitoring/grafana-values.yaml > temp-values.yaml
-        
+        run: |
           helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
             --namespace monitoring --create-namespace \
-            --values temp-values.yaml \
-            --force
-        
-          rm temp-values.yaml
+            --values manifest/base/monitoring/grafana-values.yaml
+          
+          kubectl delete secret alertmanager-prometheus-stack-kube-prom-alertmanager -n monitoring --ignore-not-found=true
+          
+          sed "s/GMAIL_APP_PASSWORD/${{ secrets.GMAIL_APP_PASSWORD }}/g" \
+            manifest/base/monitoring/alertmanager-email-config.yaml > temp-config.yaml
+          
+          kubectl apply -f temp-config.yaml
+          rm temp-config.yaml
       
     
