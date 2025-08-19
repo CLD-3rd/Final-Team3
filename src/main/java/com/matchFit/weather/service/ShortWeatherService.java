@@ -114,18 +114,21 @@ public class ShortWeatherService {
         Map<String, String> categoryMap = new HashMap<>();
         LocalDateTime closestForecastDateTime = null;
         long minDiff = Long.MAX_VALUE;
-        
-        String tmx = "-";
-        String tmn = "-";
 
         for (JsonNode item : items) {
-            String category = item.path("category").asText(); // POP, SKY, TMP, etc.
+            String category = item.path("category").asText();
             String fcstDate = item.path("fcstDate").asText();
             String fcstTime = item.path("fcstTime").asText();
             String value = item.path("fcstValue").asText();
 
             LocalDateTime forecastTime = LocalDateTime.parse(fcstDate + fcstTime, DateTimeFormatter.ofPattern("yyyyMMddHHmm"));
-            long diff = Math.abs(Duration.between(forecastTime, targetTime).toMinutes());
+
+            // ✅ targetTime 이후의 예보만 고려
+            if (forecastTime.isBefore(targetTime)) {
+                continue;
+            }
+
+            long diff = Duration.between(targetTime, forecastTime).toMinutes();
 
             if (diff < minDiff) {
                 minDiff = diff;
@@ -138,7 +141,7 @@ public class ShortWeatherService {
         }
 
         if (closestForecastDateTime == null) {
-            return new WeatherResponseDto(null, null, "-", "-", "-", "-", "-");
+            return new WeatherResponseDto(null, null, "예보 없음", "-", "-", "-", "-");
         }
 
         return new WeatherResponseDto(
