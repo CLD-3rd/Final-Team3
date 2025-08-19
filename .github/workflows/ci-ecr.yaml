@@ -169,7 +169,7 @@ jobs:
           helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
           helm repo update
 
-      - name: Deploy Prometheus stack (if not exists)
+      - name: Deploy Prometheus stack
         run: |
           kubectl delete secret alertmanager-prometheus-stack-kube-prom-alertmanager -n monitoring --ignore-not-found=true
       
