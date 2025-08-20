@@ -265,11 +265,19 @@ public class PostService {
 	    post.setDate(request.getDate());
 	    post.setMaxPeople(request.getMaxPeople());
 	    post.setGender(request.getGender());
-	    post.setStatus(request.getStatus());
 	    post.setCost(request.getCost());
 	    post.setImageUrl(newImageUrl);  // 이미지 URL 업데이트
 	    post.setSports(request.getSports());
 	    post.setTown(request.getTown());
+	    
+	    // 참가자 수 확인 후 상태 업데이트 
+	    int currentParticipantsCount = participationRepository.countByPost_IdAndStatus(postId, ApplicationStatus.APPROVED) + 1;
+	    if (currentParticipantsCount >= post.getMaxPeople()) {
+	        post.setStatus(Status.CLOSED);
+	    } else if (post.getStatus() == Status.CLOSED && currentParticipantsCount < post.getMaxPeople()) {
+	        // 최대 인원을 늘려서 다시 모집 가능한 상태가 된 경우
+	        post.setStatus(Status.OPEN);
+	    }
 	    
 	    Post updatedPost = postRepository.save(post);
 	    
