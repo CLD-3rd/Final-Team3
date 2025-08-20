@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,7 +38,14 @@ public class ParticipationService {
    private final ParticipationRepository participationRepository;
    private final UserRepository userRepository;
    private final PostRepository postRepository;
+   private final StringRedisTemplate redisTemplate;
+   
+   private static final String APPLICANT_KEY_FMT = "applicants:post_%d";
 
+   private String getApplicantKey(Long postId) {
+       return String.format(APPLICANT_KEY_FMT, postId);
+   }
+   
    // 모집 글 신청
    @Transactional
    public void applyPost(Long postId, Long userId) {
@@ -161,73 +169,67 @@ public class ParticipationService {
     }
 
     @Transactional
-   public DecisionApplicant manageApplicant(Long postId, ManageApplicant dto, CustomUserDetails userDetails) {
-      Post post = postRepository.findById(postId).orElseThrow(
-            () -> new PostNotFoundException());
-
-      User currentUser = userDetails.getUser();
-
-      if (!post.getUser().getId().equals(currentUser.getId())) {
-         throw new UnauthorizedUserException();
-      }
+    public DecisionApplicant manageApplicant(Long postId, ManageApplicant dto, CustomUserDetails userDetails) {
+        Post post = postRepository.findById(postId).orElseThrow(PostNotFoundException::new);
+        User currentUser = userDetails.getUser();
+        if (!post.getUser().getId().equals(currentUser.getId())) {
+            throw new UnauthorizedUserException();
+        }
 
         Participation participation = participationRepository
-            .findByPostIdAndUserId(postId, dto.getApplicantId());
+                .findByPostIdAndUserId(postId, dto.getApplicantId());
 
-//        if (dto.getDecision() == Decision.ACCEPT) {
-//            participation.setStatus(ApplicationStatus.APPROVED);
-//
-//            // 현재 승인된 인원 수 확인
-//            int approvedCount = participationRepository.countByPost_IdAndStatus(postId, ApplicationStatus.APPROVED);
-//
-//            // 승인 완료 처리로 인해 인원이 찼다면 마감 처리
-//            if (approvedCount + 1 >= post.getMaxPeople()) {
-//                post.setStatus(com.matchFit.post.entity.Status.CLOSED);
-//                postRepository.save(post);
-//                participationRepository.flush(); 
-//            }
-//
-//        } else {
-//            participation.setStatus(ApplicationStatus.REJECTED);
-//        }
-//      return new DecisionApplicant(
-//            participation.getUser().getId(),
-//            participation.getUser().getNickname(),
-//            participation.getStatus());
-      
+        ApplicationStatus previous = participation.getStatus();
+
         if (dto.getDecision() == Decision.ACCEPT) {
-          // 이미 승인된 경우 중복 승인 방지
-          if (participation.getStatus() == ApplicationStatus.APPROVED) {
-              return new DecisionApplicant(
-                      participation.getUser().getId(),
-                      participation.getUser().getNickname(),
-                      participation.getStatus()
-              );
-          }
+            if (previous == ApplicationStatus.APPROVED) {
+                return new DecisionApplicant(participation.getUser().getId(),
+                        participation.getUser().getNickname(), participation.getStatus());
+            }
 
-          participation.setStatus(ApplicationStatus.APPROVED);
-          participationRepository.saveAndFlush(participation); // 변경을 DB에 먼저 반영
+            participation.setStatus(ApplicationStatus.APPROVED);
+            participationRepository.saveAndFlush(participation);
 
-          // 승인 인원 재집계 (이번 승인자 포함됨)
-          int approvedCount = participationRepository
-                  .countByPost_IdAndStatus(postId, ApplicationStatus.APPROVED)+1;
+            String key = getApplicantKey(postId);
+            try {
+                // Redis에서 현재 승인 인원 수 증가
+                Long newCount = redisTemplate.opsForValue().increment(key, 1);
+                if (newCount == null) {
+                    // Redis 초기화: DB 기준으로 현재 승인 인원 수 세팅
+                    long dbCount = participationRepository.countByPost_IdAndStatus(postId, ApplicationStatus.APPROVED);
+                    redisTemplate.opsForValue().set(key, String.valueOf(dbCount));
+                    newCount = dbCount;
+                }
 
-          if (approvedCount >= post.getMaxPeople()) {
-              if (post.getStatus() != com.matchFit.post.entity.Status.CLOSED) {
-                  post.setStatus(com.matchFit.post.entity.Status.CLOSED);
-                  postRepository.save(post);
-              }
-          }
-      } else {
-          participation.setStatus(ApplicationStatus.REJECTED);
-          participationRepository.save(participation);
-      }
+                // 모집 마감 체크
+                if (newCount >= post.getMaxPeople() && post.getStatus() != Status.CLOSED) {
+                    post.setStatus(Status.CLOSED);
+                    postRepository.save(post);
+                }
 
-      return new DecisionApplicant(
-              participation.getUser().getId(),
-              participation.getUser().getNickname(),
-              participation.getStatus()
-      );
-        
-   }
+            } catch (Exception e) {
+                System.out.println("Redis update failed for post {}: {}" + postId + e.getMessage() + e);
+            }
+
+        } else { // REJECT
+            participation.setStatus(ApplicationStatus.REJECTED);
+            participationRepository.saveAndFlush(participation);
+
+            // 이전 상태가 APPROVED였다면 Redis에서 DECR
+            if (previous == ApplicationStatus.APPROVED) {
+                String key = getApplicantKey(postId);
+                try {
+                    redisTemplate.opsForValue().decrement(key);
+                } catch (Exception e) {
+                	System.out.println("Redis decrement failed for post {}: {}" + postId + e.getMessage() + e);
+                }
+            }
+        }
+
+        return new DecisionApplicant(
+                participation.getUser().getId(),
+                participation.getUser().getNickname(),
+                participation.getStatus()
+        );
+    }
 }
