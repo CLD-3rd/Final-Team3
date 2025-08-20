@@ -70,5 +70,4 @@ public class EmailNotiServiceImpl implements NotificationService {
 	        // 또는 logger 사용: log.warn("메일 전송 실패", e);
 	    }
 	}
-
 }

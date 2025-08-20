@@ -52,36 +52,24 @@ public class RedisConfig {
     	
     	// 1) Standalone 설정
         RedisStandaloneConfiguration standaloneConfig = new RedisStandaloneConfiguration(host, port);
-        // standaloneConfig.setHostName(redisProperties.getHost());
-        // standaloneConfig.setPort(redisProperties.getPort());
-        // if (StringUtils.hasText(redisProperties.getPassword())) {
-        //     standaloneConfig.setPassword(RedisPassword.of(redisProperties.getPassword()));
-        // }
         standaloneConfig.setPassword(RedisPassword.of(password));
 
 	
         // 2) Lettuce 클라이언트 설정 분기
+//		LettuceClientConfiguration.LettuceSslClientConfigurationBuilder clientBuilder =
+//        LettuceClientConfiguration.builder().useSsl();	
+//        // LettuceClientConfiguration clientConfig = LettuceClientConfiguration.builder()
+//        //         .build();
+//        // if (sslEnabled) {
+//        //     clientBuilder
+//        //         .useSsl()                    // SSL/TLS 사용
+//        //         .disablePeerVerification();  // 인증서 검증 끌 때 (필요 시)
+//        // }
+//        LettuceClientConfiguration clientConfig = clientBuilder.build();
 
-
-		LettuceClientConfiguration.LettuceSslClientConfigurationBuilder clientBuilder =
-        LettuceClientConfiguration.builder().useSsl();	
-        // LettuceClientConfiguration clientConfig = LettuceClientConfiguration.builder()
-        //         .build();
-
-
-
-        // if (sslEnabled) {
-        //     clientBuilder
-        //         .useSsl()                    // SSL/TLS 사용
-        //         .disablePeerVerification();  // 인증서 검증 끌 때 (필요 시)
-        // }
-
-
-        LettuceClientConfiguration clientConfig = clientBuilder.build();
-
-
-
-      
+        // 테스트용 SSL 비활성화
+        LettuceClientConfiguration clientConfig = LettuceClientConfiguration.builder()
+                .build(); // SSL 사용 안 함
 
         // 3) 팩토리 생성
         return new LettuceConnectionFactory(standaloneConfig, clientConfig);
