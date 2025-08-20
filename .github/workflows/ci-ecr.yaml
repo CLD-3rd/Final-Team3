@@ -169,12 +169,27 @@ jobs:
           helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
           helm repo update
 
+<<<<<<< HEAD
+      - name: Deploy Prometheus stack (if not exists)
+=======
       - name: Deploy Prometheus stack
+>>>>>>> 8a96b4e17e4781d84c1349921ac7414b5f8d6ec3
         run: |
+          kubectl delete secret alertmanager-prometheus-stack-kube-prom-alertmanager -n monitoring --ignore-not-found=true
+
+          sed "s/GMAIL_APP_PASSWORD/${{ secrets.GMAIL_APP_PASSWORD }}/g" \
+          manifest/base/monitoring/grafana-values.yaml > temp-values.yaml
+        
           helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
             --namespace monitoring --create-namespace \
+<<<<<<< HEAD
+            --values temp-values.yaml
+        
+          rm temp-values.yaml
+=======
             --values manifest/base/monitoring/grafana-values.yaml \
             --values manifest/base/monitoring/alertmanager-values.yaml \
             --set alertmanager.config.global.smtp_auth_password=${{ secrets.GMAIL_APP_PASSWORD }}
       
     
+>>>>>>> 8a96b4e17e4781d84c1349921ac7414b5f8d6ec3
