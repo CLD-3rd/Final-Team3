@@ -19,7 +19,6 @@ public class UpdatePostRequestDto {
     private LocalDateTime date;
     private Integer maxPeople;
     private Gender gender;
-    private Status status;
     private Integer cost;
     private String imageUrl;
     private Sports sports;
