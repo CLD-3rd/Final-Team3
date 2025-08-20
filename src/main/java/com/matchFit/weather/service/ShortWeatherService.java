@@ -93,13 +93,16 @@ public class ShortWeatherService {
         int[] availableHours = {2, 5, 8, 11, 14, 17, 20, 23};
         int hour = time.getHour();
         int minute = time.getMinute();
+        
+        // 기본값: 가장 마지막(=전날 23시 발표)
+        int selectedHour = 23;
 
-        int selectedHour = availableHours[0];
-        for (int h : availableHours) {
+        for (int i = availableHours.length - 1; i >= 0; i--) {
+            int h = availableHours[i];
+            // 발표 시간 기준으로 10분 지난 시점부터 사용 가능
             if (hour > h || (hour == h && minute >= 10)) {
-                selectedHour = h;
-            } else {
-                break;
+                return String.format("%02d00", h);
+//                break;
             }
         }
 

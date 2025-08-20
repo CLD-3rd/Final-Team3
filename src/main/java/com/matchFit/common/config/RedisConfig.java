@@ -61,6 +61,7 @@ public class RedisConfig {
 
 	
         // 2) Lettuce 클라이언트 설정 분기
+
         LettuceClientConfiguration.LettuceSslClientConfigurationBuilder clientBuilder =
         LettuceClientConfiguration.builder().useSsl();	
 //        LettuceClientConfiguration clientConfig = LettuceClientConfiguration.builder()
@@ -74,6 +75,7 @@ public class RedisConfig {
         // }
 
         LettuceClientConfiguration clientConfig = clientBuilder.build();
+
 
       
 

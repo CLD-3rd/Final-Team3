@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 
@@ -30,7 +31,7 @@ public class AccountRecoveryService {
 	
 	private final JavaMailSender mailSender;
 
-    @Value("${spring.mail.username}")
+	@Value("${app.mail.from}")
     private String fromAddress;
 
     @Value("${app.frontend.reset-password-url}")
@@ -84,7 +85,13 @@ public class AccountRecoveryService {
 
     //  내부 메일 발송 유틸 
     private void sendPasswordResetMail(String to, String token) {
-        String link = resetUrlBase + token;
+        //String link = resetUrlBase + token;
+    	String link = UriComponentsBuilder.fromHttpUrl(resetUrlBase)
+    	        .replaceQuery(null)                     
+    	        .queryParam("token", token.trim())      
+    	        .build(true)                            
+    	        .toUriString();
+
         String subject = "[MatchFit] 비밀번호 재설정 안내";
         String body = """
             안녕하세요.
