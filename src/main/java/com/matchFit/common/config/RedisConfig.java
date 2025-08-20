@@ -62,10 +62,12 @@ public class RedisConfig {
 	
         // 2) Lettuce 클라이언트 설정 분기
 
-        LettuceClientConfiguration.LettuceSslClientConfigurationBuilder clientBuilder =
+
+		LettuceClientConfiguration.LettuceSslClientConfigurationBuilder clientBuilder =
         LettuceClientConfiguration.builder().useSsl();	
-//        LettuceClientConfiguration clientConfig = LettuceClientConfiguration.builder()
-//                .build();
+        // LettuceClientConfiguration clientConfig = LettuceClientConfiguration.builder()
+        //         .build();
+
 
 
         // if (sslEnabled) {
@@ -74,7 +76,9 @@ public class RedisConfig {
         //         .disablePeerVerification();  // 인증서 검증 끌 때 (필요 시)
         // }
 
+
         LettuceClientConfiguration clientConfig = clientBuilder.build();
+
 
 
       
