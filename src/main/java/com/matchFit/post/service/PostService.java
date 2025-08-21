@@ -1,24 +1,19 @@
 package com.matchFit.post.service;
 
-import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.YearMonth;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Service;
@@ -72,10 +67,6 @@ public class PostService {
     private final PostViewService postViewService;
     private final S3Service s3Service;
     private final ShortWeatherService weatherService;
-    private final StringRedisTemplate redisTemplate;
-    
-    private static final String APPLICANT_KEY_FMT = "applicants:post_%d";
-    private static final Integer APPLICANT_KEY_TTL_MINIUTES = 5;
     
     public GetPostsList findByFilters(Sports sports, Gender gender, SortType sortType, LocalDate date, Pageable pageable) {
         if (date != null) validateNotPastDate(date);
@@ -165,21 +156,8 @@ public class PostService {
 		Post post = dto.toEntity(currentUser);
 		post.setImageUrl(imageUrl);  // 이미지 URL 설정
 		
-		Post saved = postRepository.save(post);
-
-        // 즉시 Redis에 초기 참가 인원( 작성자 포함으로 1) 세팅
-        String key = applicantKey(saved.getId());
-        try {
-            // 원하는 경우 setIfAbsent으로 바꿀 수 있음. 여기서는 단순 set.
-            redisTemplate.opsForValue().set(key, "1");
-            log.info("Initialized redis key {} = 1 for post {}", key, saved.getId());
-        } catch (Exception e) {
-            // Redis 실패는 DB 롤백과 무관하도록 로그만 남김
-            log.error("Failed to initialize redis key {} for post {}: {}", key, saved.getId(), e.getMessage(), e);
-        }
-
-        return saved;
-    }
+		return postRepository.save(post);
+	}
 	
 	// 모집 글 상세 조회
 	public PostInfoResponseDto searchPost(Long postId, Long userId) {
@@ -212,38 +190,22 @@ public class PostService {
 	
 	@Transactional(readOnly = true)
 	public GetMyPosts getMyPosts(@AuthenticationPrincipal CustomUserDetails userDetails) {
-	    User currentUser = userDetails.getUser();
-	    List<Post> posts = postRepository.findByUserIdOrderByCreatedAtDesc(currentUser.getId());
-
-	    List<GetMyPost> myPosts = posts.stream()
-	        .map(post -> {
-	            String key = applicantKey(post.getId()); // applicantKey 활용
-	            String cachedValue = redisTemplate.opsForValue().get(key);
-
-	            int currentPeople;
-	            if (cachedValue != null) {
-	                currentPeople = Integer.parseInt(cachedValue);
-	            } else {
-	                // fallback: DB 조회 (승인된 인원 + 작성자)
-	                currentPeople = participationRepository.countByPost_IdAndStatus(
-	                        post.getId(),
-	                        ApplicationStatus.APPROVED
-	                ) + 1;
-	            }
-
-	            return new GetMyPost(
-	                post.getId(),
-	                post.getTitle(),
-	                post.getDate(),
-	                currentPeople,
-	                post.getMaxPeople(),
-	                post.getStatus().name()
-	            );
-	        })
-	        .collect(Collectors.toList());
-
-	    return GetMyPosts.of(myPosts);
-	}
+		User currentUser = userDetails.getUser();
+	    System.out.println("currentUser = " + currentUser.getId());
+        List<Post> posts = postRepository.findByUserIdOrderByCreatedAtDesc(currentUser.getId());
+        System.out.println("posts = " + posts);
+        List<GetMyPost> myPosts = posts.stream()
+            .map(post -> new GetMyPost(
+            		post.getId(), 
+                    post.getTitle(),
+                    post.getDate(),
+                    participationRepository.countByPost_IdAndStatus(post.getId(),ApplicationStatus.APPROVED)+1,
+                    post.getMaxPeople(),
+                    post.getStatus().name()
+            ))
+            .collect(Collectors.toList());
+        return GetMyPosts.of(myPosts);
+    }
 	
 	// 모집글 수정
 	@Transactional
@@ -323,99 +285,23 @@ public class PostService {
 	}
 	
 	 // helper to build currentPeopleMap from List<Long> ids
-	public Map<Long, Integer> buildCurrentPeopleMap(List<Long> ids) {
-	    if (ids == null || ids.isEmpty()) return Collections.emptyMap();
-
-	    Map<Long, Integer> currentPeopleMap = new HashMap<>(ids.size());
-
-	    // 1) prepare keys and defaults
-	    List<String> keys = new ArrayList<>(ids.size());
-	    Map<String, Long> keyToPostId = new HashMap<>(ids.size());
-	    for (Long postId : ids) {
-	        String key = String.format(APPLICANT_KEY_FMT, postId);
-	        keys.add(key);
-	        keyToPostId.put(key, postId);
-	        // 기본값: 작성자 포함 1 (캐시/DB 둘다 없을 경우의 디폴트)
-	        currentPeopleMap.put(postId, 1);
-	    }
-
-	    List<Long> missingIds = new ArrayList<>();
-
-	    // 2) try multiGet from Redis
-	    List<String> values = null;
-	    try {
-	        values = redisTemplate.opsForValue().multiGet(keys);
-	    } catch (Exception e) {
-	        log.warn("Redis multiGet failed, falling back to DB for all ids: {}", e.getMessage());
-	        missingIds.addAll(ids);
-	        values = null;
-	    }
-
-	    if (values != null) {
-	        for (int i = 0; i < keys.size(); i++) {
-	            String key = keys.get(i);
-	            String value = values.get(i); // may be null
-	            Long postId = keyToPostId.get(key);
-
-	            if (value == null) {
-	                // 캐시 미스
-	                missingIds.add(postId);
-	                continue;
-	            }
-
-	            try {
-	                int parsed = Integer.parseInt(value); // Redis에는 '작성자 포함 총인원' 이 저장되어 있다고 가정
-	                currentPeopleMap.put(postId, parsed); // 그대로 반환
-	            } catch (NumberFormatException nfe) {
-	                log.warn("Invalid redis value for key {}: {}, fallback to DB", key, value);
-	                missingIds.add(postId);
-	            }
-	        }
-	    }
-
-	    // 3) DB에서 보정해야 할 postId들 처리
-	    if (!missingIds.isEmpty()) {
-	        // 배치로 DB에서 approved 수(작성자 제외) 집계
-	        List<Object[]> approvedCounts = participationRepository.countApprovedByPostIds(missingIds, ApplicationStatus.APPROVED);
-	        // approvedCounts: List of [postId, count] (count = 승인자 수, 작성자 제외)
-
-	        // touched: DB 결과에 등장한 postId들
-	        Set<Long> touched = new HashSet<>();
-	        for (Object[] row : approvedCounts) {
-	            Long postId = (Long) row[0];
-	            Long approvedCount = (Long) row[1]; // 작성자 제외 수
-
-	            int totalIncludingAuthor = approvedCount.intValue() + 1; // 작성자 포함
-	            currentPeopleMap.put(postId, totalIncludingAuthor);
-	            touched.add(postId);
-
-	            // Redis에 작성자 포함 총인원으로 초기화 (다른 프로세스가 이미 넣었을 수 있으니 setIfAbsent)
-	            String key = String.format(APPLICANT_KEY_FMT, postId);
-	            try {
-	                redisTemplate.opsForValue().setIfAbsent(key, String.valueOf(totalIncludingAuthor), Duration.ofMinutes(APPLICANT_KEY_TTL_MINIUTES));
-	            } catch (Exception e) {
-	                log.warn("Failed to set redis key {} to {}: {}", key, totalIncludingAuthor, e.getMessage());
-	            }
-	        }
-
-	        // DB 결과에 없는 postId들 (approvedCount == 0) 은 작성자 포함 1 유지, Redis에 1로 초기화 시도
-	        for (Long postId : missingIds) {
-	            if (!touched.contains(postId)) {
-	                // approvedCount == 0
-	                currentPeopleMap.put(postId, 1); // 이미 기본값이 1이지만 명시적으로 다시 설정
-	                String key = String.format(APPLICANT_KEY_FMT, postId);
-	                try {
-	                    redisTemplate.opsForValue().setIfAbsent(key, "1", Duration.ofMinutes(APPLICANT_KEY_TTL_MINIUTES));
-	                } catch (Exception e) {
-	                    log.debug("Failed to set redis key {} to 1: {}", key, e.getMessage());
-	                }
-	            }
-	        }
-	    }
-
-	    return currentPeopleMap;
-	}
-
+    private Map<Long, Integer> buildCurrentPeopleMap(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) return Collections.emptyMap();
+        List<Object[]> approvedCounts = participationRepository.countApprovedByPostIds(ids, ApplicationStatus.APPROVED);
+        Map<Long, Integer> currentPeopleMap = new HashMap<>();
+        
+        // 모든 postId를 1로 초기화 (작성자 포함)
+        for (Long postId : ids) {
+            currentPeopleMap.put(postId, 1);
+        }
+        
+        for (Object[] row : approvedCounts) {
+            Long postId = (Long) row[0];
+            Long count = (Long) row[1];
+            currentPeopleMap.put(postId, count.intValue()+1);
+        }
+        return currentPeopleMap;
+    }
 
     // sort by proximity to now (closest upcoming first)
     private List<Post> sortPostsByDate(List<Post> posts) {
@@ -536,10 +422,6 @@ public class PostService {
     public void expirePosts() {
         LocalDateTime now = LocalDateTime.now(); // timezone 고려 (아래 참조)
         int updated = postRepository.markExpired(now, Status.EXPIRED, Status.OPEN);
-    }
-    
-    private String applicantKey(Long postId) {
-        return String.format(APPLICANT_KEY_FMT, postId);
     }
     
 }
