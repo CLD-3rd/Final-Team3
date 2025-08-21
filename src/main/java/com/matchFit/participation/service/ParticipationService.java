@@ -1,5 +1,6 @@
 package com.matchFit.participation.service;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -30,9 +31,11 @@ import com.matchFit.user.repository.UserRepository;
 import com.matchFit.user.security.CustomUserDetails;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ParticipationService {
    
    private final ParticipationRepository participationRepository;
@@ -41,6 +44,7 @@ public class ParticipationService {
    private final StringRedisTemplate redisTemplate;
    
    private static final String APPLICANT_KEY_FMT = "applicants:post_%d";
+   private static final Integer APPLICANT_KEY_TTL_MINIUTES = 5;
 
    private String getApplicantKey(Long postId) {
        return String.format(APPLICANT_KEY_FMT, postId);
@@ -182,48 +186,46 @@ public class ParticipationService {
         ApplicationStatus previous = participation.getStatus();
 
         if (dto.getDecision() == Decision.ACCEPT) {
+            // 이미 승인된 경우 중복 승인 방지
             if (previous == ApplicationStatus.APPROVED) {
-                return new DecisionApplicant(participation.getUser().getId(),
-                        participation.getUser().getNickname(), participation.getStatus());
+                return new DecisionApplicant(
+                        participation.getUser().getId(),
+                        participation.getUser().getNickname(),
+                        participation.getStatus()
+                );
             }
 
+            // DB에 승인 반영
             participation.setStatus(ApplicationStatus.APPROVED);
             participationRepository.saveAndFlush(participation);
 
+            // Redis: 해당 포스트 키를 INCR (key가 없으면 안전하게 DB 기준으로 초기화)
             String key = getApplicantKey(postId);
             try {
-                // Redis에서 현재 승인 인원 수 증가
                 Long newCount = redisTemplate.opsForValue().increment(key, 1);
                 if (newCount == null) {
-                    // Redis 초기화: DB 기준으로 현재 승인 인원 수 세팅
-                    long dbCount = participationRepository.countByPost_IdAndStatus(postId, ApplicationStatus.APPROVED);
-                    redisTemplate.opsForValue().set(key, String.valueOf(dbCount));
-                    newCount = dbCount;
+                    // Redis가 비어 있거나 이상한 경우 DB에서 집계하여 초기화 (DB count는 APPROVED 수 -> 작성자 포함하려면 +1)
+                    long approvedCount = participationRepository.countByPost_IdAndStatus(postId, ApplicationStatus.APPROVED);
+                    long totalIncludingAuthor = approvedCount + 1; // 작성자 포함
+                    redisTemplate.opsForValue().set(key, String.valueOf(totalIncludingAuthor), Duration.ofMinutes(APPLICANT_KEY_TTL_MINIUTES));
+                    newCount = totalIncludingAuthor;
                 }
 
-                // 모집 마감 체크
+                // 모집 마감 체크 (Redis 기준)
                 if (newCount >= post.getMaxPeople() && post.getStatus() != Status.CLOSED) {
                     post.setStatus(Status.CLOSED);
                     postRepository.save(post);
                 }
-
             } catch (Exception e) {
-                System.out.println("Redis update failed for post {}: {}" + postId + e.getMessage() + e);
+                // Redis 실패는 DB 반영에 영향주지 않음 — 로그만 남기고 진행
+               log.error("Redis update failed for post {}: {}", postId, e.getMessage(), e);
             }
 
-        } else { // REJECT
+        } else { // REJECT: DB만 업데이트, Redis는 건드리지 않음
             participation.setStatus(ApplicationStatus.REJECTED);
             participationRepository.saveAndFlush(participation);
 
-            // 이전 상태가 APPROVED였다면 Redis에서 DECR
-            if (previous == ApplicationStatus.APPROVED) {
-                String key = getApplicantKey(postId);
-                try {
-                    redisTemplate.opsForValue().decrement(key);
-                } catch (Exception e) {
-                	System.out.println("Redis decrement failed for post {}: {}" + postId + e.getMessage() + e);
-                }
-            }
+            // 주의: 이전에 APPROVED였더라도 Redis에서 DECR 하지 않음(요청하신 대로)
         }
 
         return new DecisionApplicant(
