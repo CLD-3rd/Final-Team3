@@ -212,22 +212,38 @@ public class PostService {
 	
 	@Transactional(readOnly = true)
 	public GetMyPosts getMyPosts(@AuthenticationPrincipal CustomUserDetails userDetails) {
-		User currentUser = userDetails.getUser();
-	    System.out.println("currentUser = " + currentUser.getId());
-        List<Post> posts = postRepository.findByUserIdOrderByCreatedAtDesc(currentUser.getId());
-        System.out.println("posts = " + posts);
-        List<GetMyPost> myPosts = posts.stream()
-            .map(post -> new GetMyPost(
-            		post.getId(), 
-                    post.getTitle(),
-                    post.getDate(),
-                    participationRepository.countByPost_IdAndStatus(post.getId(),ApplicationStatus.APPROVED)+1,
-                    post.getMaxPeople(),
-                    post.getStatus().name()
-            ))
-            .collect(Collectors.toList());
-        return GetMyPosts.of(myPosts);
-    }
+	    User currentUser = userDetails.getUser();
+	    List<Post> posts = postRepository.findByUserIdOrderByCreatedAtDesc(currentUser.getId());
+
+	    List<GetMyPost> myPosts = posts.stream()
+	        .map(post -> {
+	            String key = applicantKey(post.getId()); // applicantKey 활용
+	            String cachedValue = redisTemplate.opsForValue().get(key);
+
+	            int currentPeople;
+	            if (cachedValue != null) {
+	                currentPeople = Integer.parseInt(cachedValue);
+	            } else {
+	                // fallback: DB 조회 (승인된 인원 + 작성자)
+	                currentPeople = participationRepository.countByPost_IdAndStatus(
+	                        post.getId(),
+	                        ApplicationStatus.APPROVED
+	                ) + 1;
+	            }
+
+	            return new GetMyPost(
+	                post.getId(),
+	                post.getTitle(),
+	                post.getDate(),
+	                currentPeople,
+	                post.getMaxPeople(),
+	                post.getStatus().name()
+	            );
+	        })
+	        .collect(Collectors.toList());
+
+	    return GetMyPosts.of(myPosts);
+	}
 	
 	// 모집글 수정
 	@Transactional
