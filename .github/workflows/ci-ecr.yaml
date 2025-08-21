@@ -175,5 +175,4 @@ jobs:
             --namespace monitoring --create-namespace \
             --values manifest/base/monitoring/grafana-values.yaml \
             --values manifest/base/monitoring/alertmanager-values.yaml \
-            --values manifest/base/monitoring/prometheus-values.yaml \
             --set alertmanager.config.global.smtp_auth_password=${{ secrets.GMAIL_APP_PASSWORD }}
