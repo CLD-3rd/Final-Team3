@@ -23,16 +23,20 @@ class RedisConfig {
     @Value("\${spring.data.redis.password}")
     private lateinit var password: String
 
+    @Value("\${spring.data.redis.ssl.enabled:false}")
+    private var sslEnabled: Boolean = false
+
     @Bean
     fun redisConnectionFactory(): LettuceConnectionFactory {
         val standaloneConfig = RedisStandaloneConfiguration(host, port)
         standaloneConfig.setPassword(RedisPassword.of(password))
 
-        val clientConfig = LettuceClientConfiguration.builder()
-            .useSsl()
-            .build()
+        val clientConfigBuilder = LettuceClientConfiguration.builder()
+        if (sslEnabled) {
+            clientConfigBuilder.useSsl()
+        }
 
-        return LettuceConnectionFactory(standaloneConfig, clientConfig)
+        return LettuceConnectionFactory(standaloneConfig, clientConfigBuilder.build())
     }
 
     @Bean

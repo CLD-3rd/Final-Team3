@@ -8,5 +8,5 @@ import org.springframework.stereotype.Component
 @Component
 class StringToSportsConverter : Converter<String, Sports> {
     override fun convert(source: String): Sports =
-        Sports.fromLabel(source)
+        Sports.fromLabel(source) ?: throw IllegalArgumentException("Unknown sports: $source")
 }
