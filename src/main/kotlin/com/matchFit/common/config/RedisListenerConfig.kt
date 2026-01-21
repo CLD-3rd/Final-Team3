@@ -30,7 +30,7 @@ class RedisListenerConfig(
     fun expiredKeyListener(postViewService: PostViewService): ExpiredKeyListener =
         ExpiredKeyListener(postViewService)
 
-    private class ExpiredKeyListener(
+    class ExpiredKeyListener(
         private val postViewService: PostViewService
     ) : MessageListener {
         companion object {

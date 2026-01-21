@@ -99,7 +99,7 @@ class ParticipationService(
             throw AccessDeniedException("본인의 모집글만 조회할 수 있습니다.")
         }
 
-        val applicants = participationRepository.findAllByPostId(postId)
+        val applicants = participationRepository.findAllByPostIdWithUser(postId)
         val applicantDtos = GetMyPostApplicant.from(applicants)
         return GetMyPostApplicants.of(applicantDtos)
     }

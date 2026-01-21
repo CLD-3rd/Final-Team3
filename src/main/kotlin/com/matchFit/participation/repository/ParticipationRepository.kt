@@ -11,7 +11,16 @@ interface ParticipationRepository : JpaRepository<Participation, Long> {
 
     fun countByPost_IdAndStatus(postId: Long, status: ApplicationStatus): Int
 
-    fun findAllByPostId(postId: Long): List<Participation>
+//    fun findAllByPostId(postId: Long): List<Participation>
+
+    @Query(
+        """
+        SELECT p FROM Participation p
+        JOIN FETCH p.user
+        WHERE p.post.id = :postId
+        """
+    )
+    fun findAllByPostIdWithUser(@Param("postId") postId: Long): List<Participation>
 
     @Query(
         """
