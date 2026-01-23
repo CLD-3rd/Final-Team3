@@ -16,6 +16,7 @@ enum class SuccessCode(
     POST_GET_MY_APPLIED_POSTS("POST208", "내가 신청한 모집글 리스트를 성공적으로 조회했습니다."),
     POST_DELETED("POST209", "모집글이 성공적으로 삭제되었습니다."),
     POST_CANCEL_APPLY("POST210", "모집글 신청이 성공적으로 취소되었습니다."),
+    POST_ACTIVE_HEARTBEAT("POST211", "모집글 활성 조회가 갱신되었습니다."),
 
     // USER
     USER_CREATED("USER200", "회원가입이 성공적으로 완료되었습니다."),

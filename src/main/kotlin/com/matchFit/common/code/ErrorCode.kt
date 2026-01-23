@@ -14,6 +14,7 @@ enum class ErrorCode(
     INVALID_SORTING_TYPE("POST403", "유효하지 않은 정렬 타입입니다.", HttpStatus.BAD_REQUEST),
     POST_PAST_DAYS("POST404", "과거 날짜에 게시글을 조회할 수 없습니다.", HttpStatus.BAD_REQUEST),
     POST_PAST_MONTHS("POST405", "과거 달에 게시글을 조회할 수 없습니다.", HttpStatus.BAD_REQUEST),
+    POST_VIEWER_KEY_REQUIRED("POST406", "viewerKey가 필요합니다.", HttpStatus.BAD_REQUEST),
 
     // PARTICIPATION
     PARTICIPATION_CANCELLATION_TIME_EXCEEDED("PARTICIPATION400", "경기 하루 전부터는 취소할 수 없습니다.", HttpStatus.BAD_REQUEST),
