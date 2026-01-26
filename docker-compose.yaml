@@ -1,11 +1,11 @@
-version: '3.8'
+redis-cli -h 127.0.0.1 -p 6379 -a redis1234version: '3.8'
 
 services:
   redis:
     image: redis:latest
     container_name: redis
     restart: always
-    command: redis-server --requirepass redis1234
+    command: redis-server --requirepass redis1234 --notify-keyspace-events Ex
     volumes:
       - redis_volume_data:/data
     ports:

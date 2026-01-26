@@ -26,12 +26,23 @@ class PostActiveViewService(
             postId.toString(),
             ttlSeconds.toString()
         )
+        redisTemplate.expire(activePostKey, ACTIVE_KEY_TTL)
         return result ?: 0L
     }
 
     fun getActiveCount(postId: Long): Long {
         val count = redisTemplate.opsForZSet().size(activePostKey(postId))
         return count ?: 0L
+    }
+
+    fun getPopularPostIds(start: Long, end: Long): List<Long> {
+        val ids = redisTemplate.opsForZSet().reverseRange(ACTIVE_POSTS_KEY, start, end)
+        if (ids.isNullOrEmpty()) return emptyList()
+        return ids.mapNotNull { it.toLongOrNull() }
+    }
+
+    fun getPopularPostCount(): Long {
+        return redisTemplate.opsForZSet().size(ACTIVE_POSTS_KEY) ?: 0L
     }
 
     private fun activePostKey(postId: Long): String = ACTIVE_POST_KEY_FMT.format(postId)
