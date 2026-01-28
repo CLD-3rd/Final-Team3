@@ -37,6 +37,33 @@ class ParticipationService(
     private fun getApplicantKey(postId: Long): String =
         String.format(APPLICANT_KEY_FMT, postId)
 
+    private fun updateApplicantCount(postId: Long, delta: Long): Long? {
+        val key = getApplicantKey(postId)
+        return try {
+            val existed = redisTemplate.hasKey(key) == true
+            var newCount = redisTemplate.opsForValue().increment(key, delta)
+            if (!existed || newCount == null || newCount < 1L) {
+                val approvedCount = participationRepository.countByPost_IdAndStatus(
+                    postId,
+                    ApplicationStatus.APPROVED
+                )
+                val totalIncludingAuthor = approvedCount + 1
+                redisTemplate.opsForValue().set(
+                    key,
+                    totalIncludingAuthor.toString(),
+                    Duration.ofMinutes(APPLICANT_KEY_TTL_MINUTES.toLong())
+                )
+                newCount = totalIncludingAuthor.toLong()
+            } else {
+                redisTemplate.expire(key, Duration.ofMinutes(APPLICANT_KEY_TTL_MINUTES.toLong()))
+            }
+            newCount
+        } catch (ex: Exception) {
+            log.error("Redis update failed for post {}: {}", postId, ex.message, ex)
+            null
+        }
+    }
+
     @Transactional
     fun applyPost(postId: Long, userId: Long) {
         val user = userRepository.findById(userId)
@@ -79,6 +106,7 @@ class ParticipationService(
         participationRepository.delete(participation)
 
         if (wasApproved) {
+            updateApplicantCount(postId, -1)
             val currentApproved = participationRepository.countByPost_IdAndStatus(
                 postId,
                 ApplicationStatus.APPROVED
@@ -156,31 +184,15 @@ class ParticipationService(
             participation.status = ApplicationStatus.APPROVED
             participationRepository.saveAndFlush(participation)
 
-            val key = getApplicantKey(postId)
-            try {
-                var newCount = redisTemplate.opsForValue().increment(key, 1)
-                if (newCount == null) {
-                    val approvedCount = participationRepository.countByPost_IdAndStatus(
-                        postId,
-                        ApplicationStatus.APPROVED
-                    )
-                    val totalIncludingAuthor = approvedCount + 1
-                    redisTemplate.opsForValue().set(
-                        key,
-                        totalIncludingAuthor.toString(),
-                        Duration.ofMinutes(APPLICANT_KEY_TTL_MINUTES.toLong())
-                    )
-                    newCount = totalIncludingAuthor.toLong()
-                }
-
-                if (newCount >= post.maxPeople.toLong() && post.status != Status.CLOSED) {
-                    post.status = Status.CLOSED
-                    postRepository.save(post)
-                }
-            } catch (ex: Exception) {
-                log.error("Redis update failed for post {}: {}", postId, ex.message, ex)
+            val newCount = updateApplicantCount(postId, 1) ?: 0L
+            if (newCount >= post.maxPeople.toLong() && post.status != Status.CLOSED) {
+                post.status = Status.CLOSED
+                postRepository.save(post)
             }
         } else {
+            if (previous == ApplicationStatus.APPROVED) {
+                updateApplicantCount(postId, -1)
+            }
             participation.status = ApplicationStatus.REJECTED
             participationRepository.saveAndFlush(participation)
         }
