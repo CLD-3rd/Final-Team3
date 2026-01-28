@@ -45,7 +45,6 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.YearMonth
-import java.time.temporal.ChronoUnit
 
 
 @Transactional
@@ -55,6 +54,7 @@ class PostService(
     private val participationRepository: ParticipationRepository,
     private val postRepository: PostRepository,
     private val postViewService: PostViewService,
+    private val postActiveViewService: PostActiveViewService,
     private val s3Service: S3Service,
     private val weatherService: ShortWeatherService,
     private val redisTemplate: StringRedisTemplate
@@ -102,21 +102,59 @@ class PostService(
         date: LocalDate?,
         pageable: Pageable
     ): GetPostsList {
-        val unpaged = postRepository.findByFilters(sportsName, genderName, date, Pageable.unpaged())
-        val allPosts = unpaged.content
+        val totalPopularCount = postActiveViewService.getPopularPostCount()
+        if (totalPopularCount == 0L) {
+            return GetPostsList.of(emptyList(), pageable.pageNumber, pageable.pageSize, 0, 0)
+        }
 
-        val allIds = extractIds(allPosts)
-        val counts = postViewService.getViewCounts(allIds)
+        val pageSize = pageable.pageSize
+        val pageStartIndex = pageable.pageNumber * pageSize
+        val neededPopularCount = pageStartIndex + pageSize
 
-        val sortedPosts = sortPostsByPopularity(allPosts, counts)
-        val pageContent = paginateList(sortedPosts, pageable.pageNumber, pageable.pageSize)
+        val popularPosts = mutableListOf<Post>()
+        var redisOffset = 0L
+        var exhausted = false
 
+        while (popularPosts.size < neededPopularCount && !exhausted) {
+            val batchSize = pageSize * POPULAR_OVERSCAN_MULTIPLIER
+            val ids = postActiveViewService.getPopularPostIds(redisOffset, redisOffset + batchSize - 1)
+            if (ids.isEmpty()) {
+                exhausted = true
+                break
+            }
+            redisOffset += ids.size
+            if (ids.size < batchSize) {
+                exhausted = true
+            }
+
+            val filteredPosts = postRepository.findByFiltersAndIds(sportsName, genderName, date, ids)
+            val postMap = filteredPosts.associateBy { it.id!! }
+            for (id in ids) {
+                val post = postMap[id] ?: continue
+                popularPosts.add(post)
+                if (popularPosts.size >= neededPopularCount) break
+            }
+        }
+
+        val pagePopular = if (popularPosts.size > pageStartIndex) {
+            popularPosts.drop(pageStartIndex).take(pageSize)
+        } else {
+            emptyList()
+        }
+
+        val pageContent = pagePopular
         val pageIds = extractIds(pageContent)
+        val counts = postViewService.getViewCounts(pageIds)
         val currentPeople = buildCurrentPeopleMap(pageIds)
         val dtos = GetPost.from(pageContent, counts, currentPeople)
 
-        val totalPages = kotlin.math.ceil(sortedPosts.size.toDouble() / pageable.pageSize).toInt()
-        val totalElements = sortedPosts.size.toLong()
+        val allPopularIds = postActiveViewService.getPopularPostIds(0, totalPopularCount - 1)
+        val totalElements = if (allPopularIds.isEmpty()) {
+            0L
+        } else {
+            postRepository.countByFiltersAndIds(sportsName, genderName, date, allPopularIds)
+        }
+        val totalPages = if (totalElements == 0L) 0 else kotlin.math.ceil(totalElements.toDouble() / pageSize).toInt()
 
         return GetPostsList.of(dtos, pageable.pageNumber, pageable.pageSize, totalElements, totalPages)
     }
@@ -384,16 +422,6 @@ class PostService(
         return currentPeopleMap
     }
 
-    private fun sortPostsByDate(posts: List<Post>?): List<Post> {
-        if (posts == null) return emptyList()
-        val now = LocalDateTime.now()
-        return posts.sortedBy { kotlin.math.abs(ChronoUnit.SECONDS.between(it.date, now)) }
-    }
-
-    private fun sortPostsByPopularity(posts: List<Post>, counts: Map<Long, Long>): List<Post> {
-        return posts.sortedByDescending { counts[it.id!!] ?: 0L }
-    }
-
     private fun validateNotPastMonth(month: YearMonth) {
         val currentMonth = YearMonth.now()
         if (month.isBefore(currentMonth)) {
@@ -438,12 +466,6 @@ class PostService(
 
     private fun extractIds(posts: List<Post>): List<Long> = posts.map { it.id!! }
 
-    private fun <T> paginateList(list: List<T>, pageNum: Int, pageSize: Int): List<T> {
-        val from = kotlin.math.min(pageNum * pageSize, list.size)
-        val to = kotlin.math.min(from + pageSize, list.size)
-        return list.subList(from, to)
-    }
-
     fun deleteMyPost(postId: Long, userDetails: CustomUserDetails) {
         val currentUserId = userDetails.userId
 
@@ -475,5 +497,6 @@ class PostService(
     companion object {
         private const val APPLICANT_KEY_FMT = "applicants:post_%d"
         private const val APPLICANT_KEY_TTL_MINUTES = 5
+        private const val POPULAR_OVERSCAN_MULTIPLIER = 5
     }
 }

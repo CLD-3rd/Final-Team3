@@ -12,8 +12,11 @@ import com.matchFit.post.dto.response.GetMyPostApplicants
 import com.matchFit.post.dto.response.GetMyPosts
 import com.matchFit.post.dto.response.GetPostsCalender
 import com.matchFit.post.dto.response.GetPostsList
+import com.matchFit.post.dto.response.PostActiveViewResponse
 import com.matchFit.post.entity.SortType
 import com.matchFit.post.entity.Sports
+import com.matchFit.post.exception.MissingViewerKeyException
+import com.matchFit.post.service.PostActiveViewService
 import com.matchFit.post.service.PostService
 import com.matchFit.user.entity.Gender
 import com.matchFit.user.security.CustomUserDetails
@@ -42,6 +45,7 @@ import java.time.YearMonth
 @RequestMapping("/api/posts")
 class PostController(
     private val postService: PostService,
+    private val postActiveViewService: PostActiveViewService,
     private val userService: UserService,
     private val participationService: ParticipationService
 ) {
@@ -112,6 +116,18 @@ class PostController(
         return ResponseEntity.ok(ApiResponseDTO.onSuccess(SuccessCode.POST_GET_MY_APPLICANTS, applicants))
     }
 
+    @PostMapping("/{postId}/heartbeat")
+    fun heartbeat(
+        @PathVariable postId: Long,
+        @RequestParam(required = false) viewerKey: String?,
+        @AuthenticationPrincipal userDetails: CustomUserDetails?
+    ): ResponseEntity<ApiResponseDTO<PostActiveViewResponse>> {
+        val effectiveViewerKey = resolveViewerKey(viewerKey, userDetails)
+        val activeCount = postActiveViewService.heartbeat(postId, effectiveViewerKey)
+        val response = PostActiveViewResponse(activeCount)
+        return ResponseEntity.ok(ApiResponseDTO.onSuccess(SuccessCode.POST_ACTIVE_HEARTBEAT, response))
+    }
+
     @PutMapping("/{postId}")
     fun updatePost(
         @PathVariable postId: Long,
@@ -130,5 +146,14 @@ class PostController(
     ): ResponseEntity<ApiResponseDTO<Void>> {
         postService.deleteMyPost(postId, userDetails)
         return ResponseEntity.ok(ApiResponseDTO.onSuccess(SuccessCode.POST_DELETED, null))
+    }
+
+    private fun resolveViewerKey(viewerKey: String?, userDetails: CustomUserDetails?): String {
+        userDetails?.user?.id?.let { return "user:$it" }
+        val trimmed = viewerKey?.trim()
+        if (trimmed.isNullOrEmpty()) {
+            throw MissingViewerKeyException()
+        }
+        return trimmed
     }
 }
