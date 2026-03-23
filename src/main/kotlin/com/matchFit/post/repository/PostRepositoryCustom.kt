@@ -10,5 +10,4 @@ import java.time.LocalDate
 interface PostRepositoryCustom {
     fun findByFilters(sports: Sports?, gender: Gender?, date: LocalDate?, pageable: Pageable): Page<Post>
     fun findByFiltersAndIds(sports: Sports?, gender: Gender?, date: LocalDate?, ids: Collection<Long>): List<Post>
-    fun countByFiltersAndIds(sports: Sports?, gender: Gender?, date: LocalDate?, ids: Collection<Long>): Long
 }

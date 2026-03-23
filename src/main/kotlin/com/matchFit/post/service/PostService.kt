@@ -109,54 +109,26 @@ class PostService(
             return GetPostsList.of(emptyList(), pageable.pageNumber, pageable.pageSize, 0, 0)
         }
 
+        val allPopularIds = postActiveViewService.getPopularPostIds(0, totalPopularCount - 1)
+        if (allPopularIds.isEmpty()) {
+            return GetPostsList.of(emptyList(), pageable.pageNumber, pageable.pageSize, 0, 0)
+        }
+
+        val filteredPosts = postRepository.findByFiltersAndIds(sports, gender, date, allPopularIds)
+        val postMap = filteredPosts.associateBy { it.id!! }
+        val sortedPosts = allPopularIds.mapNotNull { postMap[it] }
+
         val pageSize = pageable.pageSize
         val pageStartIndex = pageable.pageNumber * pageSize
-        val neededPopularCount = pageStartIndex + pageSize
+        val pageContent = sortedPosts.drop(pageStartIndex).take(pageSize)
 
-        val popularPosts = mutableListOf<Post>()
-        var redisOffset = 0L
-        var exhausted = false
+        val totalElements = sortedPosts.size.toLong()
+        val totalPages = if (totalElements == 0L) 0 else kotlin.math.ceil(totalElements.toDouble() / pageSize).toInt()
 
-        while (popularPosts.size < neededPopularCount && !exhausted) {
-            val batchSize = pageSize * POPULAR_OVERSCAN_MULTIPLIER
-            val ids = postActiveViewService.getPopularPostIds(redisOffset, redisOffset + batchSize - 1)
-            if (ids.isEmpty()) {
-                exhausted = true
-                break
-            }
-            redisOffset += ids.size
-            if (ids.size < batchSize) {
-                exhausted = true
-            }
-
-            val filteredPosts = postRepository.findByFiltersAndIds(sports, gender, date, ids)
-            val postMap = filteredPosts.associateBy { it.id!! }
-            for (id in ids) {
-                val post = postMap[id] ?: continue
-                popularPosts.add(post)
-                if (popularPosts.size >= neededPopularCount) break
-            }
-        }
-
-        val pagePopular = if (popularPosts.size > pageStartIndex) {
-            popularPosts.drop(pageStartIndex).take(pageSize)
-        } else {
-            emptyList()
-        }
-
-        val pageContent = pagePopular
         val pageIds = extractIds(pageContent)
         val counts = postViewService.getViewCounts(pageIds)
         val currentPeople = buildCurrentPeopleMap(pageIds)
         val dtos = GetPost.from(pageContent, counts, currentPeople, followedPostIds)
-
-        val allPopularIds = postActiveViewService.getPopularPostIds(0, totalPopularCount - 1)
-        val totalElements = if (allPopularIds.isEmpty()) {
-            0L
-        } else {
-            postRepository.countByFiltersAndIds(sports, gender, date, allPopularIds)
-        }
-        val totalPages = if (totalElements == 0L) 0 else kotlin.math.ceil(totalElements.toDouble() / pageSize).toInt()
 
         return GetPostsList.of(dtos, pageable.pageNumber, pageable.pageSize, totalElements, totalPages)
     }
@@ -499,6 +471,5 @@ class PostService(
     companion object {
         private const val APPLICANT_KEY_FMT = "applicants:post_%d"
         private const val APPLICANT_KEY_TTL_MINUTES = 5
-        private const val POPULAR_OVERSCAN_MULTIPLIER = 5
     }
 }

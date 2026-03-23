@@ -65,15 +65,4 @@ class PostRepositoryImpl(
             .fetch()
     }
 
-    override fun countByFiltersAndIds(sports: Sports?, gender: Gender?, date: LocalDate?, ids: Collection<Long>): Long {
-        val post = QPost.post
-        val condition = buildFilterCondition(sports, gender, date)
-        condition.and(post.id.`in`(ids))
-
-        return queryFactory
-            .select(post.count())
-            .from(post)
-            .where(condition)
-            .fetchOne() ?: 0L
-    }
 }
