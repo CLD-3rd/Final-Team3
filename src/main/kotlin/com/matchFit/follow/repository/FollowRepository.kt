@@ -13,6 +13,9 @@ interface FollowRepository : JpaRepository<Follow, Long> {
 
     fun existsByUserIdAndPostId(userId: Long, postId: Long): Boolean
 
+    @Query("SELECT f.post.id FROM Follow f WHERE f.user.id = :userId")
+    fun findPostIdsByUserId(@Param("userId") userId: Long): Set<Long>
+
     fun deleteByUserIdAndPostId(userId: Long, postId: Long)
 
     fun deleteByPostId(postId: Long)

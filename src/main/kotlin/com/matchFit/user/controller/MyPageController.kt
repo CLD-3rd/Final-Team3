@@ -22,8 +22,7 @@ class MyPageController(
 ) {
     @GetMapping
     fun getMyPage(@AuthenticationPrincipal userDetails: CustomUserDetails): ResponseEntity<ApiResponseDTO<MyPageResponse>> {
-        val email = userDetails.username
-        val response = myPageService.getMyPage(email)
+        val response = myPageService.getMyPage(userDetails.username)
         return ResponseEntity.ok(ApiResponseDTO.onSuccess(SuccessCode.USER_GET_MY_PROFILE, response))
     }
 

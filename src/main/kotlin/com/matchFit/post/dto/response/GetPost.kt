@@ -14,13 +14,15 @@ data class GetPost(
     val currentPeople: Int,
     val maxPeople: Int,
     val gender: String,
-    val viewCount: Long
+    val viewCount: Long,
+    val isFollowed: Boolean
 ) {
     companion object {
         fun from(
             posts: List<Post>,
             viewCounts: Map<Long, Long>,
-            currentPeopleMap: Map<Long, Int>
+            currentPeopleMap: Map<Long, Int>,
+            followedPostIds: Set<Long> = emptySet()
         ): List<GetPost> =
             posts.map { post ->
                 val postId = requireNotNull(post.id)
@@ -35,7 +37,8 @@ data class GetPost(
                     currentPeopleMap[postId] ?: 0,
                     post.maxPeople,
                     post.gender.label,
-                    viewCounts[postId] ?: 0L
+                    viewCounts[postId] ?: 0L,
+                    postId in followedPostIds
                 )
             }
     }
