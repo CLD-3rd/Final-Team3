@@ -71,25 +71,23 @@ class PostService(
     ): GetPostsList {
         if (date != null) validateNotPastDate(date)
 
-        val sportsName = sports?.name
-        val genderName = gender?.name
         val followedPostIds = if (userId != null) followRepository.findPostIdsByUserId(userId) else emptySet()
 
         return when (sortType) {
-            SortType.DATE -> findByDateSorted(sportsName, genderName, date, pageable, followedPostIds)
-            SortType.POPULAR -> findByPopularitySorted(sportsName, genderName, date, pageable, followedPostIds)
+            SortType.DATE -> findByDateSorted(sports, gender, date, pageable, followedPostIds)
+            SortType.POPULAR -> findByPopularitySorted(sports, gender, date, pageable, followedPostIds)
             else -> throw InvalidSortingTypeException()
         }
     }
 
     private fun findByDateSorted(
-        sportsName: String?,
-        genderName: String?,
+        sports: Sports?,
+        gender: Gender?,
         date: LocalDate?,
         pageable: Pageable,
         followedPostIds: Set<Long>
     ): GetPostsList {
-        val page: Page<Post> = postRepository.findByFilters(sportsName, genderName, date, pageable)
+        val page: Page<Post> = postRepository.findByFilters(sports, gender, date, pageable)
 
         val ids = extractIds(page.content)
         val counts = postViewService.getViewCounts(ids)
@@ -100,8 +98,8 @@ class PostService(
     }
 
     private fun findByPopularitySorted(
-        sportsName: String?,
-        genderName: String?,
+        sports: Sports?,
+        gender: Gender?,
         date: LocalDate?,
         pageable: Pageable,
         followedPostIds: Set<Long>
@@ -131,7 +129,7 @@ class PostService(
                 exhausted = true
             }
 
-            val filteredPosts = postRepository.findByFiltersAndIds(sportsName, genderName, date, ids)
+            val filteredPosts = postRepository.findByFiltersAndIds(sports, gender, date, ids)
             val postMap = filteredPosts.associateBy { it.id!! }
             for (id in ids) {
                 val post = postMap[id] ?: continue
@@ -156,7 +154,7 @@ class PostService(
         val totalElements = if (allPopularIds.isEmpty()) {
             0L
         } else {
-            postRepository.countByFiltersAndIds(sportsName, genderName, date, allPopularIds)
+            postRepository.countByFiltersAndIds(sports, gender, date, allPopularIds)
         }
         val totalPages = if (totalElements == 0L) 0 else kotlin.math.ceil(totalElements.toDouble() / pageSize).toInt()
 
