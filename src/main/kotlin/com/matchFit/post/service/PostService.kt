@@ -66,16 +66,18 @@ class PostService(
         gender: Gender?,
         sortType: SortType,
         date: LocalDate?,
-        pageable: Pageable
+        pageable: Pageable,
+        userId: Long? = null
     ): GetPostsList {
         if (date != null) validateNotPastDate(date)
 
         val sportsName = sports?.name
         val genderName = gender?.name
+        val followedPostIds = if (userId != null) followRepository.findPostIdsByUserId(userId) else emptySet()
 
         return when (sortType) {
-            SortType.DATE -> findByDateSorted(sportsName, genderName, date, pageable)
-            SortType.POPULAR -> findByPopularitySorted(sportsName, genderName, date, pageable)
+            SortType.DATE -> findByDateSorted(sportsName, genderName, date, pageable, followedPostIds)
+            SortType.POPULAR -> findByPopularitySorted(sportsName, genderName, date, pageable, followedPostIds)
             else -> throw InvalidSortingTypeException()
         }
     }
@@ -84,7 +86,8 @@ class PostService(
         sportsName: String?,
         genderName: String?,
         date: LocalDate?,
-        pageable: Pageable
+        pageable: Pageable,
+        followedPostIds: Set<Long>
     ): GetPostsList {
         val page: Page<Post> = postRepository.findByFilters(sportsName, genderName, date, pageable)
 
@@ -92,7 +95,7 @@ class PostService(
         val counts = postViewService.getViewCounts(ids)
         val currentPeople = buildCurrentPeopleMap(ids)
 
-        val dtos = GetPost.from(page.content, counts, currentPeople)
+        val dtos = GetPost.from(page.content, counts, currentPeople, followedPostIds)
         return GetPostsList.of(dtos, page.number, page.size, page.totalElements, page.totalPages)
     }
 
@@ -100,7 +103,8 @@ class PostService(
         sportsName: String?,
         genderName: String?,
         date: LocalDate?,
-        pageable: Pageable
+        pageable: Pageable,
+        followedPostIds: Set<Long>
     ): GetPostsList {
         val totalPopularCount = postActiveViewService.getPopularPostCount()
         if (totalPopularCount == 0L) {
@@ -146,7 +150,7 @@ class PostService(
         val pageIds = extractIds(pageContent)
         val counts = postViewService.getViewCounts(pageIds)
         val currentPeople = buildCurrentPeopleMap(pageIds)
-        val dtos = GetPost.from(pageContent, counts, currentPeople)
+        val dtos = GetPost.from(pageContent, counts, currentPeople, followedPostIds)
 
         val allPopularIds = postActiveViewService.getPopularPostIds(0, totalPopularCount - 1)
         val totalElements = if (allPopularIds.isEmpty()) {

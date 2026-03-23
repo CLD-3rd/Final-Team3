@@ -87,9 +87,11 @@ class PostController(
         @RequestParam(required = false, defaultValue = "DATE") sortType: SortType,
         @RequestParam(required = false)
         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) date: LocalDate?,
-        @PageableDefault(page = 0, size = 10) pageable: Pageable
+        @PageableDefault(page = 0, size = 10) pageable: Pageable,
+        @AuthenticationPrincipal userDetails: CustomUserDetails?
     ): ResponseEntity<ApiResponseDTO<GetPostsList>> {
-        val postsList = postService.findByFilters(sports, gender, sortType, date, pageable)
+        val userId = userDetails?.user?.id
+        val postsList = postService.findByFilters(sports, gender, sortType, date, pageable, userId)
         return ResponseEntity.ok(ApiResponseDTO.onSuccess(SuccessCode.POST_GET_LIST, postsList))
     }
 

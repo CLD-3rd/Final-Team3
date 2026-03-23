@@ -31,8 +31,7 @@ class FollowController(
     fun getMyFollows(
         @AuthenticationPrincipal userDetails: UserDetails
     ): ResponseEntity<ApiResponseDTO<List<GetMyFollowResponseDto>>> {
-        val email = userDetails.username
-        val follows = followService.getUserFollows(email)
+        val follows = followService.getUserFollows(userDetails.username)
         return ResponseEntity.ok(ApiResponseDTO.onSuccess(SuccessCode.USER_GET_MY_FOLLOWS, follows))
     }
 }
