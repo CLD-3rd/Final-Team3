@@ -9,7 +9,7 @@ data class GetPostsList(
     val totalPages: Int = 1
 ) {
     companion object {
-        fun of(posts: List<GetPost>): GetPostsList {
+        fun from(posts: List<GetPost>): GetPostsList {
             return GetPostsList(posts)
         }
 

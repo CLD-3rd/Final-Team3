@@ -4,7 +4,7 @@ data class GetMyPosts(
     val posts: List<GetMyPost>
 ) {
     companion object {
-        fun of(myPosts: List<GetMyPost>): GetMyPosts {
+        fun from(myPosts: List<GetMyPost>): GetMyPosts {
             return GetMyPosts(myPosts)
         }
     }

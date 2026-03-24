@@ -93,7 +93,7 @@ class PostService(
         val counts = postViewService.getViewCounts(ids)
         val currentPeople = buildCurrentPeopleMap(ids)
 
-        val dtos = GetPost.from(page.content, counts, currentPeople, followedPostIds)
+        val dtos = GetPost.of(page.content, counts, currentPeople, followedPostIds)
         return GetPostsList.of(dtos, page.number, page.size, page.totalElements, page.totalPages)
     }
 
@@ -128,7 +128,7 @@ class PostService(
         val pageIds = extractIds(pageContent)
         val counts = postViewService.getViewCounts(pageIds)
         val currentPeople = buildCurrentPeopleMap(pageIds)
-        val dtos = GetPost.from(pageContent, counts, currentPeople, followedPostIds)
+        val dtos = GetPost.of(pageContent, counts, currentPeople, followedPostIds)
 
         return GetPostsList.of(dtos, pageable.pageNumber, pageable.pageSize, totalElements, totalPages)
     }
@@ -144,7 +144,7 @@ class PostService(
         val grouped = groupByDateAndSport(posts)
         val calendarEntries = toCalendarEntries(grouped)
 
-        return GetPostsCalender.of(calendarEntries)
+        return GetPostsCalender.from(calendarEntries)
     }
 
     fun create(dto: PostRequestDto, image: MultipartFile?, @AuthenticationPrincipal userDetails: CustomUserDetails): Post {
@@ -229,7 +229,7 @@ class PostService(
             )
         }
 
-        return GetMyPosts.of(myPosts)
+        return GetMyPosts.from(myPosts)
     }
 
     fun updatePost(

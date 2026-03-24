@@ -18,7 +18,7 @@ data class GetPost(
     val isFollowed: Boolean
 ) {
     companion object {
-        fun from(
+        fun of(
             posts: List<Post>,
             viewCounts: Map<Long, Long>,
             currentPeopleMap: Map<Long, Int>,

@@ -129,7 +129,7 @@ class ParticipationService(
 
         val applicants = participationRepository.findAllByPostIdWithUser(postId)
         val applicantDtos = GetMyPostApplicant.from(applicants)
-        return GetMyPostApplicants.of(applicantDtos)
+        return GetMyPostApplicants.from(applicantDtos)
     }
 
     fun getMyPostsParticipation(userId: Long): List<GetMyPostsParticipationResponseDto> {
