@@ -70,11 +70,4 @@ class FollowService(
         }
     }
 
-    @Transactional(readOnly = true)
-    fun isFollowed(userId: Long, postId: Long): Boolean =
-        followRepository.existsByUserIdAndPostId(userId, postId)
-
-    @Transactional(readOnly = true)
-    fun getFollowCount(postId: Long): Long =
-        followRepository.countByPostId(postId)
 }

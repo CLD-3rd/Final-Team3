@@ -30,11 +30,6 @@ class PostActiveViewService(
         return result ?: 0L
     }
 
-    fun getActiveCount(postId: Long): Long {
-        val count = redisTemplate.opsForZSet().size(activePostKey(postId))
-        return count ?: 0L
-    }
-
     fun getPopularPostIds(start: Long, end: Long): List<Long> {
         val ids = redisTemplate.opsForZSet().reverseRange(ACTIVE_POSTS_KEY, start, end)
         if (ids.isNullOrEmpty()) return emptyList()

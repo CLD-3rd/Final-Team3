@@ -66,6 +66,4 @@ class JwtProvider {
     fun getEmailFromToken(token: String): String =
         validateToken(token).get("email", String::class.java)
 
-    fun getUserIdFromToken(token: String): Long =
-        validateToken(token).get("userId", Long::class.java)
 }
