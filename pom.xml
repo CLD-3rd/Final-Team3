@@ -29,6 +29,7 @@
 	<properties>
 		<java.version>17</java.version>
 		<kotlin.version>1.9.24</kotlin.version>
+		<querydsl.version>5.1.0</querydsl.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -52,7 +53,7 @@
 
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-mail</artifactId>		
+			<artifactId>spring-boot-starter-mail</artifactId>
 		</dependency>
 
 		<dependency>
@@ -91,33 +92,9 @@
 			<scope>test</scope>
 		</dependency>
 
-
-
-		<dependency>
-        	<groupId>org.springframework.boot</groupId>
-       		<artifactId>spring-boot-starter-web</artifactId> <!-- ✅ 반드시 필요 -->
-   		</dependency>
-
 		<dependency>
 		    <groupId>org.springframework.boot</groupId>
 		    <artifactId>spring-boot-starter-security</artifactId>
-		</dependency>
-		<dependency>
-		    <groupId>io.jsonwebtoken</groupId>
-		    <artifactId>jjwt-api</artifactId>
-		    <version>0.11.5</version>
-		</dependency>
-		<dependency>
-		    <groupId>io.jsonwebtoken</groupId>
-		    <artifactId>jjwt-impl</artifactId>
-		    <version>0.11.5</version>
-		    <scope>runtime</scope>
-		</dependency>
-		<dependency>
-		    <groupId>io.jsonwebtoken</groupId>
-		    <artifactId>jjwt-jackson</artifactId>
-		    <version>0.11.5</version>
-		    <scope>runtime</scope>
 		</dependency>
 		<dependency>
 		    <groupId>io.jsonwebtoken</groupId>
@@ -158,6 +135,19 @@
 			<artifactId>p6spy-spring-boot-starter</artifactId>
 			<version>1.9.2</version>
 		</dependency>
+		<dependency>
+			<groupId>com.querydsl</groupId>
+			<artifactId>querydsl-jpa</artifactId>
+			<version>${querydsl.version}</version>
+			<classifier>jakarta</classifier>
+		</dependency>
+		<dependency>
+			<groupId>com.querydsl</groupId>
+			<artifactId>querydsl-apt</artifactId>
+			<version>${querydsl.version}</version>
+			<classifier>jakarta</classifier>
+			<scope>provided</scope>
+		</dependency>
 	</dependencies>
 
 	<build>
@@ -167,6 +157,30 @@
 				<artifactId>kotlin-maven-plugin</artifactId>
 				<version>${kotlin.version}</version>
 				<executions>
+					<execution>
+						<id>kapt</id>
+						<goals>
+							<goal>kapt</goal>
+						</goals>
+						<configuration>
+							<sourceDirs>
+								<sourceDir>${project.basedir}/src/main/kotlin</sourceDir>
+							</sourceDirs>
+							<annotationProcessorPaths>
+								<annotationProcessorPath>
+									<groupId>com.querydsl</groupId>
+									<artifactId>querydsl-apt</artifactId>
+									<version>${querydsl.version}</version>
+									<classifier>jakarta</classifier>
+								</annotationProcessorPath>
+								<annotationProcessorPath>
+									<groupId>jakarta.persistence</groupId>
+									<artifactId>jakarta.persistence-api</artifactId>
+									<version>3.1.0</version>
+								</annotationProcessorPath>
+							</annotationProcessorPaths>
+						</configuration>
+					</execution>
 					<execution>
 						<id>compile</id>
 						<phase>compile</phase>
@@ -187,6 +201,7 @@
 					<sourceDirs>
 						<sourceDir>${project.basedir}/src/main/kotlin</sourceDir>
 						<sourceDir>${project.basedir}/src/main/java</sourceDir>
+						<sourceDir>${project.build.directory}/generated-sources/kapt/compile</sourceDir>
 					</sourceDirs>
 <!--					<testSourceDirs>-->
 <!--						<testSourceDir>${project.basedir}/src/test/kotlin</testSourceDir>-->
