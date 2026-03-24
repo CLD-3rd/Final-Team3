@@ -45,7 +45,9 @@ class PostActiveViewService(
         return redisTemplate.opsForZSet().size(ACTIVE_POSTS_KEY) ?: 0L
     }
 
-    private fun activePostKey(postId: Long): String = ACTIVE_POST_KEY_FMT.format(postId)
+    private fun activePostKey(postId: Long): String {
+        return ACTIVE_POST_KEY_FMT.format(postId)
+    }
 
     fun removeActivePost(postId: Long) {
         redisTemplate.opsForZSet().remove(ACTIVE_POSTS_KEY, postId.toString())

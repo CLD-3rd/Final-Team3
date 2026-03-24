@@ -438,7 +438,9 @@ class PostService(
         }.sortedBy { it.day }
     }
 
-    private fun extractIds(posts: List<Post>): List<Long> = posts.map { it.id!! }
+    private fun extractIds(posts: List<Post>): List<Long> {
+        return posts.map { it.id!! }
+    }
 
     fun deleteMyPost(postId: Long, userDetails: CustomUserDetails) {
         val currentUserId = userDetails.userId
@@ -466,7 +468,9 @@ class PostService(
         postRepository.markExpired(now, Status.EXPIRED, Status.OPEN)
     }
 
-    private fun applicantKey(postId: Long): String = String.format(APPLICANT_KEY_FMT, postId)
+    private fun applicantKey(postId: Long): String {
+        return String.format(APPLICANT_KEY_FMT, postId)
+    }
 
     companion object {
         private const val APPLICANT_KEY_FMT = "applicants:post_%d"

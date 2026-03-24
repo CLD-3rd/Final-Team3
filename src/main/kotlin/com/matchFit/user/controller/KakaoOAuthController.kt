@@ -27,11 +27,13 @@ class KakaoOAuthController(
 ) {
     @GetMapping("/api/kakao-config")
     @ResponseBody
-    fun getKakaoConfig(): Map<String, String> = mapOf(
-        "clientId" to kakaoClientId,
-        "signupRedirectUri" to kakaoSignupRedirectUri,
-        "loginRedirectUri" to kakaoLoginRedirectUri
-    )
+    fun getKakaoConfig(): Map<String, String> {
+        return mapOf(
+            "clientId" to kakaoClientId,
+            "signupRedirectUri" to kakaoSignupRedirectUri,
+            "loginRedirectUri" to kakaoLoginRedirectUri
+        )
+    }
 
     @GetMapping("/api/user/oauth/kakao/callback")
     fun kakaoSignupCallback(@RequestParam code: String): String {

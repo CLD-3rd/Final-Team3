@@ -38,7 +38,9 @@ class AuthController(
     private val jwtProvider: JwtProvider
 ) {
     @GetMapping("/signup")
-    fun signupPage(): ModelAndView = ModelAndView("forward:/signup.html")
+    fun signupPage(): ModelAndView {
+        return ModelAndView("forward:/signup.html")
+    }
 
     @PostMapping("/signup")
     fun registerUser(@RequestBody signUpRequest: SignUpRequest): ResponseEntity<ApiResponseDTO<Void>> {
@@ -101,7 +103,9 @@ class AuthController(
     }
 
     @GetMapping("/login")
-    fun loginPage(): ModelAndView = ModelAndView("forward:/login.html")
+    fun loginPage(): ModelAndView {
+        return ModelAndView("forward:/login.html")
+    }
 
     @PostMapping("/login")
     fun loginUser(@RequestBody request: Map<String, String>): ResponseEntity<ApiResponseDTO<Map<String, String>>> {

@@ -31,7 +31,9 @@ class RedisPasswordResetToken(
         return userId.toLongOrNull()
     }
 
-    private fun key(token: String): String = PREFIX + token
+    private fun key(token: String): String {
+        return PREFIX + token
+    }
 
     private fun generateToken(): String {
         val buf = ByteArray(32)
