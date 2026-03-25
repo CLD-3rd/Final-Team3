@@ -5,7 +5,6 @@ import com.matchFit.post.entity.Sports
 import com.matchFit.post.entity.Status
 import com.matchFit.post.entity.Town
 import com.matchFit.user.entity.Gender
-import com.matchFit.weather.dto.WeatherResponseDto
 import java.time.LocalDateTime
 
 class PostInfoResponseDto(
@@ -23,10 +22,9 @@ class PostInfoResponseDto(
     val location: String,
     val currentPeople: Int,
     val isBookmarked: Boolean,
-    val userEmail: String,
-    val weather: WeatherResponseDto?
+    val userEmail: String
 ) {
-    constructor(post: Post, currentPeople: Int, isBookmarked: Boolean, weather: WeatherResponseDto?) : this(
+    constructor(post: Post, currentPeople: Int, isBookmarked: Boolean) : this(
         post.id!!,
         post.title,
         post.description,
@@ -41,7 +39,6 @@ class PostInfoResponseDto(
         post.location,
         currentPeople,
         isBookmarked,
-        post.user.email,
-        weather
+        post.user.email
     )
 }

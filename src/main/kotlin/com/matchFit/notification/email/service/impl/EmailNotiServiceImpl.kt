@@ -3,7 +3,6 @@ package com.matchFit.notification.email.service.impl
 import com.matchFit.notification.email.service.NotificationService
 import com.matchFit.post.entity.Post
 import com.matchFit.user.entity.User
-import com.matchFit.weather.dto.WeatherResponseDto
 import org.springframework.mail.SimpleMailMessage
 import org.springframework.mail.javamail.JavaMailSender
 import org.springframework.stereotype.Service
@@ -14,14 +13,8 @@ import java.time.format.DateTimeFormatter
 class EmailNotiServiceImpl(
     private val mailSender: JavaMailSender
 ) : NotificationService {
-    override fun sendMatchReminder(user: User, post: Post, weather: WeatherResponseDto?, postUrl: String) {
+    override fun sendMatchReminder(user: User, post: Post, postUrl: String) {
         try {
-            val weatherDesc = weather?.weather ?: "정보 없음"
-            val precipitation = weather?.precipitation ?: "-"
-            val tempMin = weather?.tempMin ?: "-"
-            val tempMax = weather?.tempMax ?: "-"
-            val humidity = weather?.humidity ?: "-"
-
             val subject = "[MatchFit] 내일 경기 알림: ${post.title}"
             val message = String.format(
                 """
@@ -31,10 +24,6 @@ class EmailNotiServiceImpl(
 
                 🕒 시간: %s
                 📍 장소: %s
-                🌤️ 날씨: %s
-                🌡️ 최저/최고 온도: %s°C / %s°C
-                💧 강수 확률: %s
-                💦 습도: %s
 
                 👉 상세 보기: %s
 
@@ -44,11 +33,6 @@ class EmailNotiServiceImpl(
                 post.title,
                 post.date.toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm")),
                 post.location,
-                weatherDesc,
-                tempMin,
-                tempMax,
-                precipitation,
-                humidity,
                 postUrl
             )
 

@@ -17,7 +17,6 @@ import com.matchFit.post.entity.Post
 import com.matchFit.post.entity.SortType
 import com.matchFit.post.entity.Sports
 import com.matchFit.post.entity.Status
-import com.matchFit.post.entity.Town
 import com.matchFit.post.exception.InvalidSortingTypeException
 import com.matchFit.post.exception.PastDayException
 import com.matchFit.post.exception.PastEventModificationException
@@ -29,8 +28,6 @@ import com.matchFit.s3.service.S3Service
 import com.matchFit.user.entity.Gender
 import com.matchFit.user.entity.User
 import com.matchFit.user.security.CustomUserDetails
-import com.matchFit.weather.dto.WeatherResponseDto
-import com.matchFit.weather.service.ShortWeatherService
 import org.slf4j.LoggerFactory
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -56,7 +53,6 @@ class PostService(
     private val postViewService: PostViewService,
     private val postActiveViewService: PostActiveViewService,
     private val s3Service: S3Service,
-    private val weatherService: ShortWeatherService,
     private val redisTemplate: StringRedisTemplate
 ) {
     private val log = LoggerFactory.getLogger(PostService::class.java)
@@ -197,11 +193,7 @@ class PostService(
             isBookmarked = followRepository.existsByUserIdAndPostId(userId, postId)
         }
 
-        val townEnum: Town = post.town
-        val targetTime: LocalDateTime = post.date
-        val weatherNow: WeatherResponseDto = weatherService.getShortTermWeatherByTown(townEnum, targetTime)
-
-        return PostInfoResponseDto(post, currentParticipantsCount, isBookmarked, weatherNow)
+        return PostInfoResponseDto(post, currentParticipantsCount, isBookmarked)
     }
 
     @Transactional(readOnly = true)
