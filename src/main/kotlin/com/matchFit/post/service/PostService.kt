@@ -191,6 +191,7 @@ class PostService(
         if (userId != null) {
             postViewService.recordView(postId, userId)
             isBookmarked = followRepository.existsByUserIdAndPostId(userId, postId)
+            postActiveViewService.recordActiveView(postId, "user:$userId")
         }
 
         return PostInfoResponseDto(post, currentParticipantsCount, isBookmarked)
