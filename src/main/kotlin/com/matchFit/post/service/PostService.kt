@@ -2,6 +2,7 @@ package com.matchFit.post.service
 
 import com.matchFit.follow.repository.FollowRepository
 import com.matchFit.participation.entity.ApplicationStatus
+import com.matchFit.participation.entity.Participation
 import com.matchFit.participation.repository.ParticipationRepository
 import com.matchFit.post.dto.PostInfoResponseDto
 import com.matchFit.post.dto.PostRequestDto
@@ -164,13 +165,9 @@ class PostService(
 
         val saved = postRepository.save(post)
 
-        val key = applicantKey(saved.id!!)
-        try {
-            redisTemplate.opsForValue().set(key, "1")
-            log.info("Initialized redis key {} = 1 for post {}", key, saved.id)
-        } catch (ex: Exception) {
-            log.error("Failed to initialize redis key {} for post {}: {}", key, saved.id, ex.message, ex)
-        }
+        val authorParticipation = Participation(currentUser, saved)
+        authorParticipation.status = ApplicationStatus.APPROVED
+        participationRepository.save(authorParticipation)
 
         return saved
     }
@@ -180,7 +177,7 @@ class PostService(
             .orElseThrow { PostNotFoundException() }
 
         val currentParticipantsCount =
-            participationRepository.countByPost_IdAndStatus(postId, ApplicationStatus.APPROVED) + 1
+            participationRepository.countByPost_IdAndStatus(postId, ApplicationStatus.APPROVED)
 
         if (currentParticipantsCount >= post.maxPeople) {
             post.status = Status.CLOSED
@@ -209,7 +206,7 @@ class PostService(
             val currentPeople = if (cachedValue != null) {
                 cachedValue.toInt()
             } else {
-                participationRepository.countByPost_IdAndStatus(post.id!!, ApplicationStatus.APPROVED) + 1
+                participationRepository.countByPost_IdAndStatus(post.id!!, ApplicationStatus.APPROVED).toInt()
             }
 
             GetMyPost(
@@ -282,7 +279,7 @@ class PostService(
         post.town = requireNotNull(request.town)
 
         val currentParticipantsCount =
-            participationRepository.countByPost_IdAndStatus(postId, ApplicationStatus.APPROVED) + 1
+            participationRepository.countByPost_IdAndStatus(postId, ApplicationStatus.APPROVED)
         if (currentParticipantsCount >= post.maxPeople) {
             post.status = Status.CLOSED
         } else if (post.status == Status.CLOSED && currentParticipantsCount < post.maxPeople) {
@@ -304,7 +301,7 @@ class PostService(
             val key = String.format(APPLICANT_KEY_FMT, postId)
             keys.add(key)
             keyToPostId[key] = postId
-            currentPeopleMap[postId] = 1
+            currentPeopleMap[postId] = 0
         }
 
         val missingIds = ArrayList<Long>()
@@ -353,30 +350,30 @@ class PostService(
                 val postId = row[0] as Long
                 val approvedCount = row[1] as Long
 
-                val totalIncludingAuthor = approvedCount.toInt() + 1
-                currentPeopleMap[postId] = totalIncludingAuthor
+                val count = approvedCount.toInt()
+                currentPeopleMap[postId] = count
                 touched.add(postId)
 
                 val key = String.format(APPLICANT_KEY_FMT, postId)
                 try {
                     redisTemplate.opsForValue().setIfAbsent(
                         key,
-                        totalIncludingAuthor.toString(),
+                        count.toString(),
                         Duration.ofMinutes(APPLICANT_KEY_TTL_MINUTES.toLong())
                     )
                 } catch (ex: Exception) {
-                    log.warn("Failed to set redis key {} to {}: {}", key, totalIncludingAuthor, ex.message)
+                    log.warn("Failed to set redis key {} to {}: {}", key, count, ex.message)
                 }
             }
 
             for (postId in missingIds) {
                 if (!touched.contains(postId)) {
-                    currentPeopleMap[postId] = 1
+                    currentPeopleMap[postId] = 0
                     val key = String.format(APPLICANT_KEY_FMT, postId)
                     try {
                         redisTemplate.opsForValue().setIfAbsent(
                             key,
-                            "1",
+                            "0",
                             Duration.ofMinutes(APPLICANT_KEY_TTL_MINUTES.toLong())
                         )
                     } catch (ex: Exception) {

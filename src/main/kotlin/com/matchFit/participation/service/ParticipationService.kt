@@ -47,13 +47,12 @@ class ParticipationService(
                     postId,
                     ApplicationStatus.APPROVED
                 )
-                val totalIncludingAuthor = approvedCount + 1
                 redisTemplate.opsForValue().set(
                     key,
-                    totalIncludingAuthor.toString(),
+                    approvedCount.toString(),
                     Duration.ofMinutes(APPLICANT_KEY_TTL_MINUTES.toLong())
                 )
-                newCount = totalIncludingAuthor.toLong()
+                newCount = approvedCount.toLong()
             } else {
                 redisTemplate.expire(key, Duration.ofMinutes(APPLICANT_KEY_TTL_MINUTES.toLong()))
             }
@@ -142,7 +141,7 @@ class ParticipationService(
         val currentPeople = participationRepository.countByPost_IdAndStatus(
             post.id!!,
             ApplicationStatus.APPROVED
-        ) + 1
+        )
 
         return GetMyPostsParticipationResponseDto(
             post.id!!,

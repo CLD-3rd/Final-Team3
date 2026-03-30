@@ -81,6 +81,9 @@ BEGIN
             1
         );
 
+        INSERT INTO participation (user_id, post_id, status, created_at, updated_at)
+        VALUES (1, LAST_INSERT_ID(), 'APPROVED', NOW(), NOW());
+
         SET i = i + 1;
     END WHILE;
 END;
