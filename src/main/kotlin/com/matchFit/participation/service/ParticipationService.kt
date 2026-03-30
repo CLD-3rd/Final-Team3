@@ -40,23 +40,19 @@ class ParticipationService(
     private fun updateApplicantCount(postId: Long, delta: Long): Long? {
         val key = getApplicantKey(postId)
         return try {
-            val existed = redisTemplate.hasKey(key) == true
-            var newCount = redisTemplate.opsForValue().increment(key, delta)
-            if (!existed || newCount == null || newCount < 1L) {
+            val ttl = Duration.ofMinutes(APPLICANT_KEY_TTL_MINUTES.toLong())
+            if (redisTemplate.hasKey(key) == true) {
+                val newCount = redisTemplate.opsForValue().increment(key, delta)
+                redisTemplate.expire(key, ttl)
+                newCount
+            } else {
                 val approvedCount = participationRepository.countByPost_IdAndStatus(
                     postId,
                     ApplicationStatus.APPROVED
                 )
-                redisTemplate.opsForValue().set(
-                    key,
-                    approvedCount.toString(),
-                    Duration.ofMinutes(APPLICANT_KEY_TTL_MINUTES.toLong())
-                )
-                newCount = approvedCount.toLong()
-            } else {
-                redisTemplate.expire(key, Duration.ofMinutes(APPLICANT_KEY_TTL_MINUTES.toLong()))
+                redisTemplate.opsForValue().set(key, approvedCount.toString(), ttl)
+                approvedCount.toLong()
             }
-            newCount
         } catch (ex: Exception) {
             log.error("Redis update failed for post {}: {}", postId, ex.message, ex)
             null
