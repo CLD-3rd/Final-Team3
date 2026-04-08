@@ -1,6 +1,5 @@
 package com.matchFit.common.config
 
-import com.matchFit.post.service.PostActiveViewService
 import com.matchFit.post.service.PostViewService
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -29,20 +28,16 @@ class RedisListenerConfig(
 
     @Bean
     fun expiredKeyListener(
-        postViewService: PostViewService,
-        postActiveViewService: PostActiveViewService
+        postViewService: PostViewService
     ): ExpiredKeyListener =
-        ExpiredKeyListener(postViewService, postActiveViewService)
+        ExpiredKeyListener(postViewService)
 
     class ExpiredKeyListener(
-        private val postViewService: PostViewService,
-        private val postActiveViewService: PostActiveViewService
+        private val postViewService: PostViewService
     ) : MessageListener {
         companion object {
             private val EXPIRED_VIEW_KEY: Pattern =
                 Pattern.compile("^view:post_(\\d+):user_(\\d+)$")
-            private val EXPIRED_ACTIVE_POST_KEY: Pattern =
-                Pattern.compile("^active:post:(\\d+)$")
         }
 
         override fun onMessage(message: Message, pattern: ByteArray?) {
@@ -51,13 +46,6 @@ class RedisListenerConfig(
             if (matcher.matches()) {
                 val postId = matcher.group(1).toLong()
                 postViewService.decrementViewCount(postId)
-                return
-            }
-
-            val activeMatcher = EXPIRED_ACTIVE_POST_KEY.matcher(expiredKey)
-            if (activeMatcher.matches()) {
-                val postId = activeMatcher.group(1).toLong()
-                postActiveViewService.removeActivePost(postId)
             }
         }
     }

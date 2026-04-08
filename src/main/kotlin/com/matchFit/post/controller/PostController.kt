@@ -14,7 +14,6 @@ import com.matchFit.post.dto.response.GetPostsCalender
 import com.matchFit.post.dto.response.GetPostsList
 import com.matchFit.post.entity.SortType
 import com.matchFit.post.entity.Sports
-import com.matchFit.post.service.PostActiveViewService
 import com.matchFit.post.service.PostService
 import com.matchFit.user.entity.Gender
 import com.matchFit.user.security.CustomUserDetails
@@ -43,7 +42,6 @@ import java.time.YearMonth
 @RequestMapping("/api/posts")
 class PostController(
     private val postService: PostService,
-    private val postActiveViewService: PostActiveViewService,
     private val userService: UserService,
     private val participationService: ParticipationService
 ) {

@@ -3,7 +3,6 @@ package com.matchFit.post.service
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.stereotype.Service
 import java.time.Duration
-import java.time.Instant
 
 
 @Service
@@ -19,10 +18,6 @@ class PostViewService(
         val isNew = redis.opsForValue().setIfAbsent(viewKey, "1", VIEW_TTL)
         if (isNew == true) {
             redis.opsForZSet().incrementScore(ZSET_KEY, postId.toString(), 1.0)
-
-            val expireAt = Instant.now().epochSecond + VIEW_TTL.seconds
-            val zsetMember = String.format("view:post_%d:user_%d", postId, userId)
-            redis.opsForZSet().add("views:expiring", zsetMember, expireAt.toDouble())
         }
     }
 
@@ -38,6 +33,16 @@ class PostViewService(
             result[postId] = count
         }
         return result
+    }
+
+    fun getPopularPostIds(start: Long, end: Long): List<Long> {
+        val ids = redis.opsForZSet().reverseRange(ZSET_KEY, start, end)
+        if (ids.isNullOrEmpty()) return emptyList()
+        return ids.mapNotNull { it.toLongOrNull() }
+    }
+
+    fun getPopularPostCount(): Long {
+        return redis.opsForZSet().size(ZSET_KEY) ?: 0L
     }
 
     companion object {

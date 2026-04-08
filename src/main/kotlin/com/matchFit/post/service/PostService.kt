@@ -52,7 +52,6 @@ class PostService(
     private val participationRepository: ParticipationRepository,
     private val postRepository: PostRepository,
     private val postViewService: PostViewService,
-    private val postActiveViewService: PostActiveViewService,
     private val s3Service: S3Service,
     private val redisTemplate: StringRedisTemplate
 ) {
@@ -101,12 +100,12 @@ class PostService(
         pageable: Pageable,
         followedPostIds: Set<Long>
     ): GetPostsList {
-        val totalPopularCount = postActiveViewService.getPopularPostCount()
+        val totalPopularCount = postViewService.getPopularPostCount()
         if (totalPopularCount == 0L) {
             return GetPostsList.of(emptyList(), pageable.pageNumber, pageable.pageSize, 0, 0)
         }
 
-        val allPopularIds = postActiveViewService.getPopularPostIds(0, totalPopularCount - 1)
+        val allPopularIds = postViewService.getPopularPostIds(0, totalPopularCount - 1)
         if (allPopularIds.isEmpty()) {
             return GetPostsList.of(emptyList(), pageable.pageNumber, pageable.pageSize, 0, 0)
         }
@@ -188,7 +187,6 @@ class PostService(
         if (userId != null) {
             postViewService.recordView(postId, userId)
             isBookmarked = followRepository.existsByUserIdAndPostId(userId, postId)
-            postActiveViewService.recordActiveView(postId, "user:$userId")
         }
 
         return PostInfoResponseDto(post, currentParticipantsCount, isBookmarked)
