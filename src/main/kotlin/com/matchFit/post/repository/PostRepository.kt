@@ -6,7 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
-import java.time.LocalDate
 import java.time.LocalDateTime
 
 interface PostRepository : JpaRepository<Post, Long>, PostRepositoryCustom {
@@ -15,9 +14,7 @@ interface PostRepository : JpaRepository<Post, Long>, PostRepositoryCustom {
 
     fun findByUserIdOrderByCreatedAtDesc(userId: Long): List<Post>
 
-    fun findByStatusAndDate(closed: Status, tomorrow: LocalDate): List<Post>
-
-@Modifying
+    @Modifying
     @Query("update Post p set p.status = :expired where p.date < :now and p.status = :open")
     fun markExpired(
         @Param("now") now: LocalDateTime,

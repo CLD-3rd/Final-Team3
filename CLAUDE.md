@@ -36,8 +36,6 @@ com.matchFit/
 ├── post/           # 스포츠 모집글 CRUD; 복잡한 필터링/정렬은 QueryDSL(PostRepositoryImpl) 사용
 ├── participation/  # 모집글 신청, 호스트의 승인/거절, 취소 가능 시간 제한 처리
 ├── follow/         # 유저 팔로우/언팔로우
-├── notification/
-│   └── email/      # 스케줄 기반 이메일 알림 (EmailAlertScheduler → PostAlertService → EmailNotiServiceImpl)
 ├── s3/             # AWS S3 이미지 업로드
 └── common/         # BaseEntity(감사 필드), ApiResponseDTO, ErrorCode/SuccessCode, GlobalExceptionHandler, TimingAspect
 ```
