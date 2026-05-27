@@ -1,0 +1,139 @@
+package com.matchFit.post.controller;
+
+import com.matchFit.common.code.SuccessCode;
+import com.matchFit.common.dto.response.ApiResponseDTO;
+import com.matchFit.participation.dto.response.MessageResponse;
+import com.matchFit.participation.service.ParticipationService;
+import com.matchFit.post.dto.PostInfoResponseDto;
+import com.matchFit.post.dto.PostRequestDto;
+import com.matchFit.post.dto.UpdatePostRequestDto;
+import com.matchFit.post.dto.UpdatePostResponseDto;
+import com.matchFit.post.dto.response.GetMyPostApplicants;
+import com.matchFit.post.dto.response.GetMyPosts;
+import com.matchFit.post.dto.response.GetPostsCalender;
+import com.matchFit.post.dto.response.GetPostsList;
+import com.matchFit.post.entity.SortType;
+import com.matchFit.post.entity.Sports;
+import com.matchFit.post.service.PostService;
+import com.matchFit.user.entity.Gender;
+import com.matchFit.user.security.CustomUserDetails;
+import com.matchFit.user.service.UserService;
+import java.time.LocalDate;
+import java.time.YearMonth;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+
+@RestController
+@RequestMapping("/api/posts")
+@RequiredArgsConstructor
+public class PostController {
+
+    private final PostService postService;
+    private final UserService userService;
+    private final ParticipationService participationService;
+
+    @PostMapping
+    public ResponseEntity<ApiResponseDTO<String>> createPosts(
+            @RequestPart("postData") PostRequestDto dto,
+            @RequestPart(value = "image", required = false) MultipartFile image,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        postService.create(dto, image, userDetails);
+        return ResponseEntity.ok(ApiResponseDTO.onSuccess(SuccessCode.POST_CREATED, null));
+    }
+
+    @GetMapping("/{postId}")
+    public ResponseEntity<ApiResponseDTO<PostInfoResponseDto>> getPostDetail(
+            @PathVariable Long postId,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        Long userId = userDetails != null ? userService.findUserIdByEmail(userDetails.getUsername()) : null;
+        PostInfoResponseDto dto = postService.searchPost(postId, userId);
+        return ResponseEntity.ok(ApiResponseDTO.onSuccess(SuccessCode.POST_GET_DETAIL, dto));
+    }
+
+    @PostMapping("/{postId}/apply")
+    public ResponseEntity<ApiResponseDTO<MessageResponse>> applyPost(
+            @PathVariable Long postId,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        Long userId = userService.findUserIdByEmail(userDetails.getUsername());
+        participationService.applyPost(postId, userId);
+        return ResponseEntity.ok(ApiResponseDTO.onSuccess(SuccessCode.POST_APPLY, null));
+    }
+
+    @GetMapping("/list")
+    public ResponseEntity<ApiResponseDTO<GetPostsList>> getPostsList(
+            @RequestParam(required = false) Sports sports,
+            @RequestParam(required = false) Gender gender,
+            @RequestParam(required = false, defaultValue = "DATE") SortType sortType,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @PageableDefault(page = 0, size = 10) Pageable pageable,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        Long userId = userDetails != null ? userDetails.getUser().getId() : null;
+        GetPostsList postsList = postService.findByFilters(sports, gender, sortType, date, pageable, userId);
+        return ResponseEntity.ok(ApiResponseDTO.onSuccess(SuccessCode.POST_GET_LIST, postsList));
+    }
+
+    @GetMapping("/calender")
+    public ResponseEntity<ApiResponseDTO<GetPostsCalender>> getPostsCalender(
+            @RequestParam("month") @DateTimeFormat(pattern = "yyyy-MM") YearMonth month
+    ) {
+        GetPostsCalender postsCalender = postService.findByMonth(month);
+        return ResponseEntity.ok(ApiResponseDTO.onSuccess(SuccessCode.POST_GET_CALENDER, postsCalender));
+    }
+
+    @GetMapping("/mine")
+    public ResponseEntity<ApiResponseDTO<GetMyPosts>> getMyPosts(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        GetMyPosts myPosts = postService.getMyPosts(userDetails);
+        return ResponseEntity.ok(ApiResponseDTO.onSuccess(SuccessCode.POST_GET_MY_POSTS, myPosts));
+    }
+
+    @GetMapping("/{postId}/applicants")
+    public ResponseEntity<ApiResponseDTO<GetMyPostApplicants>> getApplicants(
+            @PathVariable Long postId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        GetMyPostApplicants applicants = participationService.getApplicantsByPost(postId, userDetails);
+        return ResponseEntity.ok(ApiResponseDTO.onSuccess(SuccessCode.POST_GET_MY_APPLICANTS, applicants));
+    }
+
+    @PutMapping("/{postId}")
+    public ResponseEntity<ApiResponseDTO<UpdatePostResponseDto>> updatePost(
+            @PathVariable Long postId,
+            @RequestPart("postData") UpdatePostRequestDto request,
+            @RequestPart(value = "image", required = false) MultipartFile image,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        UpdatePostResponseDto response = postService.updatePost(postId, request, image, userDetails);
+        return ResponseEntity.ok(ApiResponseDTO.onSuccess(SuccessCode.POST_UPDATED, response));
+    }
+
+    @DeleteMapping("/{postId}")
+    public ResponseEntity<ApiResponseDTO<Void>> deleteMyPost(
+            @PathVariable Long postId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        postService.deleteMyPost(postId, userDetails);
+        return ResponseEntity.ok(ApiResponseDTO.onSuccess(SuccessCode.POST_DELETED, null));
+    }
+}
