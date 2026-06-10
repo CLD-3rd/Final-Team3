@@ -4,6 +4,8 @@ import com.matchFit.follow.repository.FollowRepository;
 import com.matchFit.participation.entity.ApplicationStatus;
 import com.matchFit.participation.entity.Participation;
 import com.matchFit.participation.repository.ParticipationRepository;
+import com.matchFit.payment.repository.PaymentRepository;
+import com.matchFit.payment.service.PaymentService;
 import com.matchFit.post.dto.PostInfoResponseDto;
 import com.matchFit.post.dto.PostRequestDto;
 import com.matchFit.post.dto.UpdatePostRequestDto;
@@ -53,11 +55,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 @Service
-@Transactional
 @RequiredArgsConstructor
 public class PostService {
 
@@ -72,7 +75,11 @@ public class PostService {
     private final PostViewService postViewService;
     private final S3Service s3Service;
     private final StringRedisTemplate redisTemplate;
+    private final PaymentRepository paymentRepository;
+    private final PaymentService paymentService;
+    private final PlatformTransactionManager transactionManager;
 
+    @Transactional(readOnly = true)
     public GetPostsList findByFilters(
             Sports sports,
             Gender gender,
@@ -156,6 +163,7 @@ public class PostService {
         return GetPostsList.of(dtos, pageable.getPageNumber(), pageable.getPageSize(), totalElements, totalPages);
     }
 
+    @Transactional(readOnly = true)
     public GetPostsCalender findByMonth(YearMonth month) {
         validateNotPastMonth(month);
 
@@ -170,6 +178,7 @@ public class PostService {
         return GetPostsCalender.from(calendarEntries);
     }
 
+    @Transactional
     public Post create(PostRequestDto dto, MultipartFile image, CustomUserDetails userDetails) {
         String imageUrl = null;
 
@@ -197,6 +206,7 @@ public class PostService {
         return saved;
     }
 
+    @Transactional
     public PostInfoResponseDto searchPost(Long postId, Long userId) {
         Post post = postRepository.findById(postId).orElseThrow(PostNotFoundException::new);
 
@@ -244,6 +254,7 @@ public class PostService {
         return GetMyPosts.from(myPosts);
     }
 
+    @Transactional
     public UpdatePostResponseDto updatePost(
             Long postId,
             UpdatePostRequestDto request,
@@ -457,29 +468,50 @@ public class PostService {
         return posts.stream().map(Post::getId).collect(Collectors.toList());
     }
 
+    /**
+     * 모집글 삭제.
+     * <p>트랜잭션 원칙: AUTHORIZED 결제를 PG void 먼저 처리(트랜잭션 없음)한 후,
+     * DB 레코드(Payment → Participation → Follow → Post)를 단일 트랜잭션으로 삭제한다.</p>
+     */
     public void deleteMyPost(Long postId, CustomUserDetails userDetails) {
         Long currentUserId = userDetails.getUserId();
-
         Post post = postRepository.findById(postId).orElseThrow(PostNotFoundException::new);
 
         if (!Objects.equals(post.getUser().getId(), currentUserId)) {
             throw new UnauthorizedUserException();
         }
 
-        participationRepository.deleteByPostId(postId);
-        followRepository.deleteByPostId(postId);
+        // 1. CAPTURED 결제 PG 환불 + CANCELLED 표시 (트랜잭션 없음)
+        paymentService.voidAllCapturedByPost(postId);
 
+        // 2. S3 이미지 삭제 (외부 호출, 트랜잭션 없음)
         String imageUrl = post.getImageUrl();
         if (imageUrl != null && !imageUrl.isBlank()) {
             s3Service.deleteByUrl(imageUrl);
         }
 
-        postRepository.delete(post);
+        // 3. DB 레코드 원자적 삭제
+        TransactionTemplate tx = new TransactionTemplate(transactionManager);
+        tx.executeWithoutResult(status -> {
+            paymentRepository.deleteByPost_Id(postId);
+            participationRepository.deleteByPostId(postId);
+            followRepository.deleteByPostId(postId);
+            postRepository.delete(post);
+        });
     }
 
     @Scheduled(cron = "0 0/10 * * * *")
     public void expirePosts() {
         LocalDateTime now = LocalDateTime.now();
+
+        // OPEN(정원 미달) → CAPTURED 결제 환불 후 EXPIRED
+        List<Long> openIds = postRepository.findExpiredCandidateIds(now, Status.OPEN);
+        if (!openIds.isEmpty()) {
+            paymentService.refundByPostIds(openIds);
+        }
+
+        // CLOSED(정원 충족) → 결제는 이미 CAPTURED, 상태만 EXPIRED로 전환
+        postRepository.markExpired(now, Status.EXPIRED, Status.CLOSED);
         postRepository.markExpired(now, Status.EXPIRED, Status.OPEN);
     }
 
