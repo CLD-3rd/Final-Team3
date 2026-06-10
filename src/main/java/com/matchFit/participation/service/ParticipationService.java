@@ -5,6 +5,12 @@ import com.matchFit.participation.entity.ApplicationStatus;
 import com.matchFit.participation.entity.Participation;
 import com.matchFit.participation.exception.ParticipationCancellationTimeExceededException;
 import com.matchFit.participation.repository.ParticipationRepository;
+import com.matchFit.payment.dto.request.TossAuthorizeRequest;
+import com.matchFit.payment.dto.response.TossPaymentResponse;
+import com.matchFit.payment.entity.Payment;
+import com.matchFit.payment.entity.PaymentStatus;
+import com.matchFit.payment.repository.PaymentRepository;
+import com.matchFit.payment.service.PaymentService;
 import com.matchFit.post.dto.response.GetMyPostApplicant;
 import com.matchFit.post.dto.response.GetMyPostApplicants;
 import com.matchFit.post.entity.Post;
@@ -20,16 +26,18 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @Service
-@Transactional
 @RequiredArgsConstructor
 public class ParticipationService {
 
@@ -41,7 +49,10 @@ public class ParticipationService {
     private final ParticipationRepository participationRepository;
     private final UserRepository userRepository;
     private final PostRepository postRepository;
+    private final PaymentRepository paymentRepository;
+    private final PaymentService paymentService;
     private final StringRedisTemplate redisTemplate;
+    private final PlatformTransactionManager transactionManager;
 
     private String getApplicantKey(Long postId) {
         return String.format(APPLICANT_KEY_FMT, postId);
@@ -66,29 +77,59 @@ public class ParticipationService {
         }
     }
 
-    public void applyPost(Long postId, Long userId) {
+    /**
+     * 모집글 신청.
+     * <p>트랜잭션 원칙: PG 승인(authorize)은 트랜잭션 밖에서 먼저 실행하고,
+     * DB 저장(Participation + Payment)은 단일 트랜잭션으로 묶는다.
+     * DB 저장 실패 시 PG void로 보상한다.</p>
+     */
+    public void applyPost(Long postId, Long userId, TossAuthorizeRequest request) {
         User user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
         Post post = postRepository.findById(postId).orElseThrow(PostNotFoundException::new);
 
         if (participationRepository.findByPostIdAndUserId(postId, userId) != null) {
             throw new IllegalStateException("이미 신청한 모집글입니다");
         }
-
         int currentPeople = participationRepository.countByPost_IdAndStatus(postId, ApplicationStatus.APPROVED);
         if (currentPeople >= post.getMaxPeople()) {
             throw new IllegalStateException("마감되었습니다");
         }
 
-        participationRepository.saveAndFlush(new Participation(user, post));
+        // 1. PG 승인 — 트랜잭션 없음
+        TossPaymentResponse pgResp = paymentService.authorize(request);
 
-        Long newCountBoxed = updateApplicantCount(postId, 1L);
-        long newCount = newCountBoxed == null ? 0L : newCountBoxed;
-        if (newCount >= (long) post.getMaxPeople() && post.getStatus() != Status.CLOSED) {
-            post.setStatus(Status.CLOSED);
-            postRepository.save(post);
+        // 2. Participation + Payment 원자적 저장
+        TransactionTemplate tx = new TransactionTemplate(transactionManager);
+        try {
+            tx.executeWithoutResult(status -> {
+                Participation saved = participationRepository.saveAndFlush(new Participation(user, post));
+                paymentService.save(saved, post, pgResp);
+
+                int count = participationRepository.countByPost_IdAndStatus(postId, ApplicationStatus.APPROVED);
+                if (count >= post.getMaxPeople() && post.getStatus() != Status.CLOSED) {
+                    post.setStatus(Status.CLOSED);
+                    postRepository.save(post);
+                }
+            });
+        } catch (Exception e) {
+            // 3. DB 저장 실패 → PG void 보상
+            try {
+                paymentService.voidPayment(pgResp.getPaymentKey(), "DB 저장 실패");
+            } catch (Exception voidEx) {
+                log.error("보상 void 실패 paymentKey={}", pgResp.getPaymentKey(), voidEx);
+            }
+            throw e;
         }
+
+        // 4. Redis 갱신 (트랜잭션 커밋 후)
+        updateApplicantCount(postId, 1L);
     }
 
+    /**
+     * 모집글 신청 취소.
+     * <p>DB 삭제를 트랜잭션으로 먼저 처리한 뒤 PG void를 호출한다.
+     * PG void 실패 시 로그만 남긴다(수동 정산 필요).</p>
+     */
     public void cancelApplyPost(Long postId, Long userId) {
         userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
         Post post = postRepository.findById(postId).orElseThrow(PostNotFoundException::new);
@@ -101,16 +142,42 @@ public class ParticipationService {
             throw new ParticipationCancellationTimeExceededException();
         }
 
-        participationRepository.delete(participation);
-        updateApplicantCount(postId, -1L);
+        Optional<Payment> paymentOpt = paymentRepository.findByParticipation_IdAndStatus(
+                participation.getId(), PaymentStatus.CAPTURED);
+        String paymentKey = paymentOpt.map(Payment::getPaymentKey).orElse(null);
 
-        int currentApproved = participationRepository.countByPost_IdAndStatus(postId, ApplicationStatus.APPROVED);
-        if (currentApproved < post.getMaxPeople() && post.getStatus() == Status.CLOSED) {
-            post.setStatus(Status.OPEN);
-            postRepository.save(post);
+        // 1. DB 삭제 — 단일 트랜잭션 (Payment → Participation 순서로 FK 제약 준수)
+        TransactionTemplate tx = new TransactionTemplate(transactionManager);
+        tx.executeWithoutResult(status -> {
+            paymentOpt.ifPresent(payment -> {
+                payment.setStatus(PaymentStatus.CANCELLED);
+                payment.setCancelReason("신청 취소");
+                paymentRepository.save(payment);
+                paymentRepository.delete(payment);
+            });
+            participationRepository.delete(participation);
+
+            int currentApproved = participationRepository.countByPost_IdAndStatus(postId, ApplicationStatus.APPROVED);
+            if (currentApproved < post.getMaxPeople() && post.getStatus() == Status.CLOSED) {
+                post.setStatus(Status.OPEN);
+                postRepository.save(post);
+            }
+        });
+
+        // 2. PG void — 트랜잭션 커밋 후 (실패해도 DB는 이미 취소 완료)
+        if (paymentKey != null) {
+            try {
+                paymentService.voidPayment(paymentKey, "신청 취소");
+            } catch (Exception e) {
+                log.error("PG void 실패(수동 정산 필요) paymentKey={}", paymentKey, e);
+            }
         }
+
+        // 3. Redis 갱신
+        updateApplicantCount(postId, -1L);
     }
 
+    @Transactional(readOnly = true)
     public GetMyPostApplicants getApplicantsByPost(Long postId, CustomUserDetails userDetails) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 모집글입니다."));
@@ -125,6 +192,7 @@ public class ParticipationService {
         return GetMyPostApplicants.from(applicantDtos);
     }
 
+    @Transactional(readOnly = true)
     public List<GetMyPostsParticipationResponseDto> getMyPostsParticipation(Long userId) {
         List<Participation> participations = participationRepository.findByUserIdWithPost(userId);
         List<GetMyPostsParticipationResponseDto> result = new ArrayList<>(participations.size());
@@ -150,5 +218,4 @@ public class ParticipationService {
                 post.getStatus()
         );
     }
-
 }
