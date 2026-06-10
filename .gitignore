@@ -48,3 +48,6 @@ bin/
 
 # k6 env
 k6/.env
+
+# Claude Code
+.claude/
