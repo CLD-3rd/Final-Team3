@@ -4,6 +4,7 @@ import com.matchFit.common.code.SuccessCode;
 import com.matchFit.common.dto.response.ApiResponseDTO;
 import com.matchFit.participation.dto.response.MessageResponse;
 import com.matchFit.participation.service.ParticipationService;
+import com.matchFit.payment.dto.request.TossAuthorizeRequest;
 import com.matchFit.post.dto.PostInfoResponseDto;
 import com.matchFit.post.dto.PostRequestDto;
 import com.matchFit.post.dto.UpdatePostRequestDto;
@@ -32,6 +33,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -70,10 +72,11 @@ public class PostController {
     @PostMapping("/{postId}/apply")
     public ResponseEntity<ApiResponseDTO<MessageResponse>> applyPost(
             @PathVariable Long postId,
+            @RequestBody TossAuthorizeRequest request,
             @AuthenticationPrincipal UserDetails userDetails
     ) {
         Long userId = userService.findUserIdByEmail(userDetails.getUsername());
-        participationService.applyPost(postId, userId);
+        participationService.applyPost(postId, userId, request);
         return ResponseEntity.ok(ApiResponseDTO.onSuccess(SuccessCode.POST_APPLY, null));
     }
 

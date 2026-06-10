@@ -17,6 +17,12 @@ public enum ErrorCode {
 
     PARTICIPATION_CANCELLATION_TIME_EXCEEDED("PARTICIPATION400", "경기 하루 전부터는 취소할 수 없습니다.", HttpStatus.BAD_REQUEST),
 
+    PAYMENT_AUTHORIZATION_FAILED("PAYMENT400", "결제 승인에 실패했습니다.", HttpStatus.BAD_REQUEST),
+    PAYMENT_CAPTURE_FAILED("PAYMENT401", "결제 매입에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    PAYMENT_VOID_FAILED("PAYMENT402", "결제 취소에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    PAYMENT_NOT_FOUND("PAYMENT403", "결제 정보를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+    PAYMENT_ALREADY_PROCESSED("PAYMENT404", "이미 처리된 결제입니다.", HttpStatus.CONFLICT),
+
     EMAIL_DUPLICATION("USER400", "이미 사용중인 이메일입니다.", HttpStatus.BAD_REQUEST),
     NICKNAME_DUPLICATION("USER401", "이미 사용중인 닉네임입니다.", HttpStatus.BAD_REQUEST),
     GENDER_INVALID("USER402", "유효하지 않은 성별입니다.", HttpStatus.BAD_REQUEST),
