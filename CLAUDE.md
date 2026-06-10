@@ -81,7 +81,7 @@ ci-ecr.yaml       멀티 아키텍처 Docker 이미지 빌드 → AWS ECR 푸시
 ci-dockerhub.yaml 멀티 아키텍처 Docker 이미지 빌드 → DockerHub 푸시 → kubectl 배포
 ```
 
-Docker 이미지에는 분산 추적을 위한 Pinpoint APM 에이전트(v2.5.4)가 포함된다.
+Docker 이미지는 eclipse-temurin:17-jre 기반 단일 스테이지로 빌드된다.
 
 ## Code Conventions
 
@@ -108,3 +108,13 @@ Redis 키            콜론(:) 구분자     (applicants:post_1, view:post_1)
 **DTO 작성:**
 - Request DTO: 일반 `class`에 `var` 필드로 선언하고 `toEntity()` 변환 메서드를 포함한다.
 - Response DTO: `data class`로 선언하고, 생성은 `companion object` 내 `from(...)` 또는 `of(...)` factory 메서드를 통해서만 한다.
+
+## Agent Rules
+
+Complex tasks (new feature / refactor / bug fix) → mandatory pipeline:
+1. @researcher → codebase analysis
+2. @planner → implementation plan (no code)
+3. implement
+4. @reviewer → review only (no fix)
+
+Skip pipeline: typo, comment, simple constant change
